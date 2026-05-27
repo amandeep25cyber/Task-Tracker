@@ -3,9 +3,7 @@ import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import { useState } from "react";
 
-const DashboardLayout=()=> {
-
-  const [role,setRole] = useState("manager");
+const DashboardLayout=({role})=> {
 
   return (
     <div className="flex h-screen bg-gray-50">
