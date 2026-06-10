@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const userSchema = new mongoose.Schema(
   {
-    organization: {
+    organisation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
       required: true,
@@ -22,12 +24,13 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      select: false,
     },
 
     role: {
       type: String,
       enum: ["admin", "manager", "member"],
-      default: "member",
+      default: "admin",
     },
 
     avatar: {
@@ -47,4 +50,28 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-export const User = mongoose.model("User",userSchema);
+userSchema.pre("save",async function (next) {
+    if(!this.isModified("password")) {
+        return next;
+    }
+
+    this.password = await bcrypt.hash(this.password, 10);
+
+    next;
+});
+
+userSchema.methods.generateToken = function () {
+  return jwt.sign(
+    {
+      userId: this._id,
+      role: this.role,
+      orgId: this.organisation,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: process.env.JWT_EXIPRY,
+    },
+  );
+};
+
+export const User = mongoose.model("User", userSchema);
