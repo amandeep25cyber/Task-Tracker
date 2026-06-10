@@ -74,9 +74,14 @@ const registerController = async(req,res)=>{
         await session.commitTransaction();
         await session.endSession();
 
+        const options = {
+            httpOnly:true,
+            secure:true
+        }
+
         res
         .status(201)
-        .cookie("token",token)
+        .cookie("token",token,options)
         .json(
             new ApiResponse(201,{
                 user:createdUser,

@@ -35,9 +35,14 @@ const loginUser = asyncHandler(async(req,res)=>{
     const userObj = user.toObject();
     delete userObj.password;
 
+    const options = {
+        httpOnly:true,
+        secure:true
+    }
+
     res
     .status(200)
-    .cookie("token",token)
+    .cookie("token",token,options)
     .json(
         new ApiResponse(200,userObj,"Logged In Successfully")
     )
