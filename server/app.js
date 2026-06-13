@@ -6,7 +6,8 @@ import authRouter from "./src/routes/auth.routes.js"
 const app = express();
 
 app.use(cors({
-    origin:process.env.CORS_ORIGIN,
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
 }));
 
 app.use(express.json());
@@ -18,5 +19,14 @@ app.get('/',(req,res)=>{
 })
 
 app.use('/api/v2/auth',authRouter)
+
+// Error handling code
+app.use((err, req, res, next) => {
+  res.json({
+    success: false,
+    status: err.status,
+    message: err.message,
+  });
+});
 
 export { app };

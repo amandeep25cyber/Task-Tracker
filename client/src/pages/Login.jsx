@@ -1,7 +1,21 @@
 import { Link } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
+import { useState } from "react";
+import { userLogin } from "../services/auth.services.js";
 
 const Login = () => {
+
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("");
+  const [role,setRole] = useState("member");
+
+  const submitHandler = (e)=>{
+    e.preventDefault();
+    userLogin({email,password,role});
+    
+  }
+  
+
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -18,7 +32,7 @@ const Login = () => {
             Sign in to your account to continue
           </p>
 
-          <form className="space-y-4">
+          <form className="space-y-4" onSubmit={submitHandler}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
@@ -27,6 +41,8 @@ const Login = () => {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
+                  onChange={(e)=>setEmail(e.target.value)}
+                  value={email}
                   placeholder="your@email.com"
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
@@ -41,6 +57,8 @@ const Login = () => {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="password"
+                  onChange={(e)=>setPassword(e.target.value)}
+                  value={password}
                   placeholder="Enter your password"
                   className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
@@ -49,10 +67,13 @@ const Login = () => {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
-              <select className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option>Team Member</option>
-                <option>Project Manager</option>
-                <option>Admin</option>
+              <select 
+              value={role}
+              onChange={(e)=>setRole(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="member">Team Member</option>
+                <option value="manager">Project Manager</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
 
@@ -73,11 +94,9 @@ const Login = () => {
             </div>
 
             <div className="space-y-3">
-              <Link to="/member" className="block">
                 <button className="w-full bg-purple-600 text-white py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors">
                   Sign In
                 </button>
-              </Link>
             </div>
           </form>
 
