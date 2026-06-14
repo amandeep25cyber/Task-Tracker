@@ -2,16 +2,35 @@ import { Link } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
 import { useState } from "react";
 import { userLogin } from "../services/auth.services.js";
+import { toast } from "react-toastify"
+import { useDispatch } from "react-redux"
+import { loginSuccess } from "../store/features/authSlice.js";
 
 const Login = () => {
 
+  const dispatch = useDispatch();
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
   const [role,setRole] = useState("member");
 
-  const submitHandler = (e)=>{
+  const submitHandler = async(e)=>{
     e.preventDefault();
-    userLogin({email,password,role});
+    try {
+      
+      const data = await userLogin({email,password,role});
+
+      console.log(data)
+      if(data.success){
+        dispatch(loginSuccess(data.data))
+        toast.success(data.message)
+      }
+      setEmail("");
+      setPassword("");
+      
+    } catch (error) {
+      toast.error(error.response?.data?.message)
+    }
+    
     
   }
   

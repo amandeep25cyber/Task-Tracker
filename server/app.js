@@ -22,9 +22,9 @@ app.use('/api/v2/auth',authRouter)
 
 // Error handling code
 app.use((err, req, res, next) => {
-  res.json({
+  res.status(err.statusCode).json({
     success: false,
-    status: err.status,
+    status: err.statusCode,
     message: err.message,
   });
 });

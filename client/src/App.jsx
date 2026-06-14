@@ -7,12 +7,14 @@ import DashboardRedirect from "./pages/DashboardRedirect";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
 import EmployeeDashboard from "./pages/member/EmployeeDashboard";
+import { ToastContainer } from "react-toastify"
 
 const App = () => {
   const role = "manager";
 
   return (
     <>
+      <ToastContainer />
       <Routes>
         <Route path="/" element={<DashboardLayout role={role}/>}>
           <Route index element={<DashboardRedirect role={role}/>} />

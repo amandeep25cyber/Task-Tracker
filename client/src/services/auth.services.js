@@ -1,20 +1,18 @@
 import axios from "axios"
 
 const userLogin = async(data)=>{
-    try {
-        const apiUrl = import.meta.env.VITE_API_URL;
-        const res = await axios.post(`${apiUrl}/auth/login`,data,{
-            withCredentials:true
-        })
+    
+    const apiUrl = import.meta.env.VITE_API_URL;
 
-        console.log(res.data);
-
-        if(res.data.success){
-            
+    const res = await axios.post(
+        `${apiUrl}/auth/login`,
+        data,
+        {
+            withCredentials: true
         }
-    } catch (error) {
-        console.log(error)
-    }
+    );
+
+    return res.data;
 }
 
 export {

@@ -96,7 +96,7 @@ const registerController = async(req,res)=>{
 
         await session.endSession();
 
-        throw new ApiError(500,error)
+        throw new ApiError(500,error.message)
     }
 }
 
