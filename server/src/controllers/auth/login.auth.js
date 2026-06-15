@@ -48,6 +48,18 @@ const loginUser = asyncHandler(async(req,res)=>{
     )
 })
 
+const getUser = asyncHandler(async(req,res)=>{
+
+    const user = await User.findById(req.user.userId);
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200,user,"Authenticated user")
+    )
+})
+
 export {
-    loginUser
+    loginUser,
+    getUser
 }

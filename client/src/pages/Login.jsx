@@ -5,10 +5,12 @@ import { userLogin } from "../services/auth.services.js";
 import { toast } from "react-toastify"
 import { useDispatch } from "react-redux"
 import { loginSuccess } from "../store/features/authSlice.js";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
   const [role,setRole] = useState("member");
@@ -23,9 +25,11 @@ const Login = () => {
       if(data.success){
         dispatch(loginSuccess(data.data))
         toast.success(data.message)
+        navigate('/')
       }
       setEmail("");
       setPassword("");
+
       
     } catch (error) {
       toast.error(error.response?.data?.message)

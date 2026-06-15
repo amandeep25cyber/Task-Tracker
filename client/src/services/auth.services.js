@@ -1,4 +1,5 @@
 import axios from "axios"
+import { loginSuccess, logout } from "../store/features/authSlice";
 
 const userLogin = async(data)=>{
     
@@ -15,6 +16,22 @@ const userLogin = async(data)=>{
     return res.data;
 }
 
+const getCurrentUser = async(dispatch)=>{
+    try {
+        const apiUrl = import.meta.env.VITE_API_URL;
+
+        const res = await axios.get(`${apiUrl}/auth/me`,{
+            withCredentials:true
+        })
+
+        dispatch(loginSuccess(res.data.data));
+
+    } catch (error) {
+        dispatch(logout());
+    }
+}
+
 export {
     userLogin,
+    getCurrentUser,
 }

@@ -11,8 +11,8 @@ function DashboardRedirect({role}) {
     return <Navigate to="manager" />;
   }
 
-  if(role === "employee"){
-    return <Navigate to="employee" />
+  if(role === "member"){
+    return <Navigate to="member" />
   }
 
   return <Navigate to="/sign-in" />;
