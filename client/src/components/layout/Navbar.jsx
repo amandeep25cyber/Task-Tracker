@@ -1,9 +1,28 @@
 import { Search, Bell, ChevronDown } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { userLogout } from "../../services/auth.services";
+import { useDispatch } from "react-redux";
+import { logout } from "../../store/features/authSlice";
+import { toast } from "react-toastify";
 
 const Navbar=({ role })=> {
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = async()=>{
+    try {
+      const res = await userLogout();
+      toast.success(res.data.message)
+      dispatch(logout());
+      
+    } catch (error) {
+      navigate('/');
+      toast.error(error.response?.data?.message)
+    }
+  }
 
   return (
     <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8">
@@ -51,7 +70,8 @@ const Navbar=({ role })=> {
                 Profile Settings
               </Link>
               <Link
-                to="/"
+                to="/sign-in"
+                onClick={handleLogout}
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
                 Sign Out

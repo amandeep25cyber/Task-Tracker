@@ -45,8 +45,19 @@ const userRegister = async(data)=>{
     return res.data;
 }
 
+const userLogout = async()=>{
+
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const res = await axios.get(`${apiUrl}/auth/logout`,{
+        withCredentials:true
+    })
+
+    return res;
+}
+
 export {
     userLogin,
     getCurrentUser,
     userRegister,
+    userLogout,
 }
