@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Mail, Lock } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { userLogin } from "../services/auth.services.js";
 import { toast } from "react-toastify"
 import { useDispatch } from "react-redux"
@@ -14,14 +14,14 @@ const Login = () => {
   const [email,setEmail] = useState("");
   const [password,setPassword] = useState("");
   const [role,setRole] = useState("member");
+  const [islogin,setIsLogin] = useState(false);
 
   const submitHandler = async(e)=>{
     e.preventDefault();
     try {
-      
+      setIsLogin(true);
       const data = await userLogin({email,password,role});
 
-      console.log(data)
       if(data.success){
         dispatch(loginSuccess(data.data))
         toast.success(data.message)
@@ -33,10 +33,12 @@ const Login = () => {
       
     } catch (error) {
       toast.error(error.response?.data?.message)
-    }
-    
-    
+    }finally{
+      setIsLogin(false);
+    } 
   }
+
+  const isValidField = [email,password,role].every(field=>field.trim()!=="");
   
 
   return (
@@ -117,8 +119,12 @@ const Login = () => {
             </div>
 
             <div className="space-y-3">
-                <button className="w-full bg-purple-600 text-white py-3 rounded-xl font-medium hover:bg-purple-700 transition-colors">
-                  Sign In
+                <button 
+                  disabled = {islogin || !isValidField}
+                  className={`w-full text-white py-3 rounded-xl font-medium  ${(islogin || !isValidField)? "cursor-not-allowed bg-purple-400": "bg-purple-600 cursor-pointer hover:bg-purple-700 transition-colors"}`}>
+                    {
+                      islogin? "Signing..":"Sign In"
+                    }
                 </button>
             </div>
           </form>
