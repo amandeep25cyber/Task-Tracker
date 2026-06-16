@@ -24,13 +24,8 @@ const registerController = async(req,res)=>{
             throw new ApiError(400,"Invalid fields");
         }
 
-        //Checking if admin already exists
-        const user = await User.findOne({
-            $and:[
-                {email},
-                {role:"admin"}
-            ]
-        })
+        //Checking if user already exists
+        const user = await User.findOne({email})
 
         if(user){
             throw new ApiError(400,"User Already exists");

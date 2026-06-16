@@ -31,7 +31,22 @@ const getCurrentUser = async(dispatch)=>{
     }
 }
 
+const userRegister = async(data)=>{
+    const apiUrl = import.meta.env.VITE_API_URL;
+
+    const res = await axios.post(
+        `${apiUrl}/auth/register`,
+        data,
+        {
+            withCredentials: true
+        }
+    );
+
+    return res.data;
+}
+
 export {
     userLogin,
     getCurrentUser,
+    userRegister,
 }
