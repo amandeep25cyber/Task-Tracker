@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useNavigate } from "react-router-dom";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import DashboardRedirect from "./pages/DashboardRedirect";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -11,6 +11,17 @@ import { ToastContainer } from "react-toastify"
 import { getCurrentUser } from "./services/auth.services.js"
 import { useDispatch, useSelector } from "react-redux";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import MyTasks from "./pages/member/MyTasks.jsx"
+import Chat from "./pages/member/Chat.jsx"
+import Files from "./pages/member/Files.jsx"
+import Calendar from "./pages/member/Calendar.jsx"
+import Profile from "./pages/member/Profile.jsx"
+import MyProjects from "./pages/manager/MyProjects.jsx"
+import Chats from "./pages/manager/Chats.jsx"
+import Reports from "./pages/manager/Reports.jsx"
+import Settings from "./pages/manager/Settings.jsx"
+import TaskBoard from "./pages/manager/TaskBoard.jsx"
+import TeamMember from "./pages/manager/TeamMembers.jsx"
 
 const App = () => {
   const dispatch = useDispatch();
@@ -63,12 +74,19 @@ const App = () => {
             path="member"
             element={
               role === "member" ? (
-                <EmployeeDashboard />
+                <Outlet/>
               ) : (
                 <Navigate to="/unauthorized" />
               )
             }
-          />
+          >
+            <Route index element={<EmployeeDashboard />} />
+            <Route path="tasks" element={<MyTasks/>}/>
+            <Route path="chat" element={<Chat/>}/>
+            <Route path="files" element={<Files/>}/>
+            <Route path="calendar" element={<Calendar/>}/>
+            <Route path="profile" element={<Profile/>} />
+          </Route>
         </Route>
        </Route>
         
