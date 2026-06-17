@@ -22,6 +22,12 @@ import Reports from "./pages/manager/Reports.jsx"
 import Settings from "./pages/manager/Settings.jsx"
 import TaskBoard from "./pages/manager/TaskBoard.jsx"
 import TeamMembers from "./pages/manager/TeamMembers.jsx"
+import Analytics from "./pages/admin/Analytics.jsx"
+import Billing from "./pages/admin/Billing.jsx"
+import Projects from "./pages/admin/Projects.jsx"
+import Setting from "./pages/admin/Settings.jsx"
+import Teams from "./pages/admin/Teams.jsx"
+import UserManagement from "./pages/admin/UserManagement.jsx"
 
 const App = () => {
   const dispatch = useDispatch();
@@ -53,12 +59,21 @@ const App = () => {
             path="admin"
             element={
               role === "admin" ? (
-                <AdminDashboard />
+                <Outlet />
               ) : (
                 <Navigate to="/unauthorized" />
               )
             }
-          />
+          >
+            <Route index element={<AdminDashboard/>}/>
+            <Route path="users" element={<UserManagement/>} />
+            <Route path="projects" element={<Projects/>} />
+            <Route path="teams" element={<Teams/>} />
+            <Route path="analytics" element={<Analytics/>} />
+            <Route path="billing" element={<Billing/>} />
+            <Route path="settings" element={<Setting/>} />
+          </Route>
+
           {/* Manager Routes */}
           <Route
             path="manager"
