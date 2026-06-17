@@ -1,9 +1,110 @@
-import React from 'react'
+import { Card, StatCard } from "../../components/ui/Card"
+import { Users, FolderKanban, CheckCircle2, Activity, TrendingUp } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 
-const AdminDashboard = () => {
+const performanceData = [
+  { month: "Jan", tasks: 65, users: 40 },
+  { month: "Feb", tasks: 78, users: 48 },
+  { month: "Mar", tasks: 90, users: 55 },
+  { month: "Apr", tasks: 81, users: 62 },
+  { month: "May", tasks: 95, users: 70 },
+  { month: "Jun", tasks: 110, users: 78 },
+];
+
+const recentActivity = [
+  { user: "Sarah Johnson", action: "created project", target: "Website Redesign", time: "2 hours ago" },
+  { user: "Mike Chen", action: "completed task", target: "API Integration", time: "3 hours ago" },
+  { user: "Emily Davis", action: "joined team", target: "Development Team", time: "5 hours ago" },
+  { user: "John Smith", action: "updated project", target: "Mobile App Launch", time: "1 day ago" },
+  { user: "Lisa Wong", action: "assigned task", target: "Bug Fix #234", time: "1 day ago" },
+];
+
+const AdminDashboard = ()=> {
   return (
-    <div>AdminDashboard</div>
-  )
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+        <p className="text-gray-600">Welcome back! Here's your system overview</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard
+          title="Total Users"
+          value="2,543"
+          change="+12% from last month"
+          icon={<Users className="w-6 h-6" />}
+          trend="up"
+        />
+        <StatCard
+          title="Active Projects"
+          value="48"
+          change="+5 new this week"
+          icon={<FolderKanban className="w-6 h-6" />}
+          trend="up"
+        />
+        <StatCard
+          title="Completed Tasks"
+          value="1,247"
+          change="+8% completion rate"
+          icon={<CheckCircle2 className="w-6 h-6" />}
+          trend="up"
+        />
+        <StatCard
+          title="System Health"
+          value="99.8%"
+          change="All systems operational"
+          icon={<Activity className="w-6 h-6" />}
+          trend="neutral"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="Team Performance">
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={performanceData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="month" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
+              <Tooltip />
+              <Area id="area-tasks" type="monotone" dataKey="tasks" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
+              <Area id="area-users" type="monotone" dataKey="users" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.6} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </Card>
+
+        <Card title="Project Distribution">
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={performanceData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="month" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
+              <Tooltip />
+              <Bar dataKey="tasks" fill="#3b82f6" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
+
+      <Card title="Recent Activity">
+        <div className="space-y-4">
+          {recentActivity.map((activity, idx) => (
+            <div key={idx} className="flex items-start gap-4 py-3 border-b border-gray-100 last:border-0">
+              <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shrink-0">
+                <span className="text-white text-sm font-medium">{activity.user.substring(0, 2).toUpperCase()}</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-900">
+                  <span className="font-medium">{activity.user}</span> {activity.action}{" "}
+                  <span className="font-medium">{activity.target}</span>
+                </p>
+                <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
 }
 
-export default AdminDashboard
+export default AdminDashboard;
