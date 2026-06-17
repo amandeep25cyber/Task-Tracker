@@ -21,7 +21,7 @@ import Chats from "./pages/manager/Chats.jsx"
 import Reports from "./pages/manager/Reports.jsx"
 import Settings from "./pages/manager/Settings.jsx"
 import TaskBoard from "./pages/manager/TaskBoard.jsx"
-import TeamMember from "./pages/manager/TeamMembers.jsx"
+import TeamMembers from "./pages/manager/TeamMembers.jsx"
 
 const App = () => {
   const dispatch = useDispatch();
@@ -44,10 +44,11 @@ const App = () => {
     <>
       <ToastContainer />
       <Routes>
+        {/* Protected Routes */}
         <Route element={<ProtectedRoute />}>
         <Route path="/" element={<DashboardLayout role={role}/>}>
           <Route index element={<DashboardRedirect role={role}/>} />
-
+          {/* Admin Routes */}
           <Route
             path="admin"
             element={
@@ -58,18 +59,27 @@ const App = () => {
               )
             }
           />
-
+          {/* Manager Routes */}
           <Route
             path="manager"
             element={
               role === "manager" ? (
-                <ManagerDashboard />
+                <Outlet />
               ) : (
                 <Navigate to="/unauthorized" />
               )
             }
-          />
+          >
+            <Route index element={<ManagerDashboard/>} />
+            <Route path="projects" element={<MyProjects/>}/> 
+            <Route path="tasks" element={<TaskBoard/>}/> 
+            <Route path="team" element={<TeamMembers/>}/> 
+            <Route path="chat" element={<Chats/>}/> 
+            <Route path="reports" element={<Reports/>}/> 
+            <Route path="settings" element={<Settings/>}/> 
+          </Route>
 
+          {/* Member Routes */}
           <Route
             path="member"
             element={
@@ -87,9 +97,11 @@ const App = () => {
             <Route path="calendar" element={<Calendar/>}/>
             <Route path="profile" element={<Profile/>} />
           </Route>
+
         </Route>
        </Route>
         
+        {/* Unprotected Routes */}
         <Route path="/sign-in" element={<Login />} />
         <Route path="/sign-up" element={<Register />} />
       </Routes>
