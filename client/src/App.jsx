@@ -39,9 +39,6 @@ const App = () => {
   
   useEffect(() => {
     getCurrentUser(dispatch);
-    if(isLoggedIn){
-      navigate('/');
-    }
   }, []);
 
   
@@ -54,6 +51,7 @@ const App = () => {
         <Route element={<ProtectedRoute />}>
         <Route path="/" element={<DashboardLayout role={role}/>}>
           <Route index element={<DashboardRedirect role={role}/>} />
+          
           {/* Admin Routes */}
           <Route
             path="admin"

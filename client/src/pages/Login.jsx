@@ -3,7 +3,7 @@ import { Mail, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { userLogin } from "../services/auth.services.js";
 import { toast } from "react-toastify"
-import { useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { loginSuccess } from "../store/features/authSlice.js";
 import { useNavigate } from "react-router-dom";
 
@@ -15,6 +15,7 @@ const Login = () => {
   const [password,setPassword] = useState("");
   const [role,setRole] = useState("member");
   const [islogin,setIsLogin] = useState(false);
+  const { isLoggedIn } = useSelector(state=>state.auth);
 
   const submitHandler = async(e)=>{
     e.preventDefault();
@@ -37,6 +38,14 @@ const Login = () => {
       setIsLogin(false);
     } 
   }
+
+  useEffect(()=>{
+    if(isLoggedIn){
+      navigate("/",{
+        replace:true
+      });
+    }
+  },[isLoggedIn])
 
   const isValidField = [email,password,role].every(field=>field.trim()!=="");
   

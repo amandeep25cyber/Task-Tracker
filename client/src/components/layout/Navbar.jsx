@@ -2,12 +2,13 @@ import { Search, Bell, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { userLogout } from "../../services/auth.services";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/features/authSlice";
 import { toast } from "react-toastify";
 
 const Navbar=({ role })=> {
   const [showDropdown, setShowDropdown] = useState(false);
+  const { user } = useSelector(state=>state.auth);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -41,9 +42,12 @@ const Navbar=({ role })=> {
           <Bell className="w-5 h-5 text-gray-600" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
-        <div className="relative">
+        <div
+          className="relative"
+          onMouseEnter={()=>setShowDropdown(true)}
+          onMouseLeave={()=>setShowDropdown(false)}
+           >
           <button
-            onClick={() => setShowDropdown(!showDropdown)}
             className="flex items-center gap-3 hover:bg-gray-50 p-2 pr-3 rounded-xl transition-colors"
           >
             <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
@@ -53,16 +57,16 @@ const Navbar=({ role })=> {
             </div>
             <div className="text-left hidden sm:block">
               <p className="text-sm font-medium text-gray-900">
-                {role === "admin" ? "Admin User" : role === "manager" ? "Project Manager" : "Team Member"}
+                {user?.name}
               </p>
               <p className="text-xs text-gray-500">
-                {role === "admin" ? "admin@company.com" : role === "manager" ? "manager@company.com" : "member@company.com"}
+                {user?.email}
               </p>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-600" />
           </button>
           {showDropdown && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
+            <div className="absolute right-0 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
               <Link
                 to={role === "member" ? "/member/profile" : `/${role}/settings`}
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
