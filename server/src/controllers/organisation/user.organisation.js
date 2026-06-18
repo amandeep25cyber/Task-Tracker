@@ -36,6 +36,27 @@ const createNewUser = asyncHandler(async(req,res)=>{
     )
 })
 
+const getAllUser = asyncHandler(async(req,res)=>{
+    const adminId = req.user._id;
+    const orgId = req.user.organisation;
+
+    const users = await User.find({
+        organisation:orgId,
+        _id: { $ne: adminId }
+    })
+
+    if(!users){
+        throw new ApiError(500,"Something went wrong");
+    }
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200,users,"All Users")
+    )
+})
+
 export {
     createNewUser,
+    getAllUser,
 }
