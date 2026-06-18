@@ -42,10 +42,16 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
-    isOnline: {
-      type: Boolean,
-      default: false,
+    status: {
+      type: String,
+      enum: ["Active","Inactive"],
+      default: "Inactive",
     },
+    
+    lastActive: {
+      type: Date,
+      default: null,
+    }
   },
   { timestamps: true },
 );
