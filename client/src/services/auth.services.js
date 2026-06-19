@@ -1,5 +1,6 @@
 import axios from "axios"
 import { loginSuccess, logout } from "../store/features/authSlice";
+import { deleteOrganisation, storeOrganisation } from "../store/features/orgSlice";
 
 const userLogin = async(data)=>{
     
@@ -24,10 +25,12 @@ const getCurrentUser = async(dispatch)=>{
             withCredentials:true
         })
 
-        dispatch(loginSuccess(res.data.data));
+        dispatch(loginSuccess(res.data.data?.user));
+        dispatch(storeOrganisation(res.data.data?.organisation));
 
     } catch (error) {
         dispatch(logout());
+        dispatch(deleteOrganisation());
     }
 }
 

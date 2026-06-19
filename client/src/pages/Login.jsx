@@ -132,7 +132,7 @@ const Login = () => {
             <div className="space-y-3">
                 <button 
                   disabled = {islogin || !isValidField}
-                  className={`w-full text-white py-3 rounded-xl font-medium  ${(islogin || !isValidField)? "cursor-not-allowed bg-purple-400": "bg-purple-600 cursor-pointer hover:bg-purple-700 transition-colors"}`}>
+                  className={`w-full text-white py-3 rounded-xl font-medium  ${(islogin || !isValidField)? "cursor-not-allowed bg-purple-500 hover:bg-purple-600": "bg-purple-600 cursor-pointer hover:bg-purple-700 transition-colors"}`}>
                     {
                       islogin? "Signing..":"Sign In"
                     }

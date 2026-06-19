@@ -59,10 +59,12 @@ const getUser = asyncHandler(async(req,res)=>{
 
     const user = await User.findById(req.user.userId);
 
+    const organisation = await Organisation.findById(req.user.orgId);
+
     res
     .status(200)
     .json(
-        new ApiResponse(200,user,"Authenticated user")
+        new ApiResponse(200,{user,organisation},"Authenticated user")
     )
 })
 

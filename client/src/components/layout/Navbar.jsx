@@ -5,6 +5,7 @@ import { userLogout } from "../../services/auth.services";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../store/features/authSlice";
 import { toast } from "react-toastify";
+import { deleteOrganisation } from "../../store/features/orgSlice";
 
 const Navbar=({ role })=> {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -18,6 +19,7 @@ const Navbar=({ role })=> {
       const res = await userLogout();
       toast.success(res.data.message)
       dispatch(logout());
+      dispatch(deleteOrganisation());
       
     } catch (error) {
       navigate('/');
