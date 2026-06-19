@@ -2,6 +2,7 @@ import { User } from "../../models/user.models.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
+import { Organisation } from "../../models/organization.models.js"
 
 const loginUser = asyncHandler(async(req,res)=>{
 
@@ -35,6 +36,12 @@ const loginUser = asyncHandler(async(req,res)=>{
     const userObj = user.toObject();
     delete userObj.password;
 
+    const organisation = await Organisation.findById(userObj.organisation);
+
+    if(!organisation){
+        throw new ApiError(500,"Something went wrong");
+    }
+
     const options = {
         httpOnly:true,
         secure:true
@@ -44,7 +51,7 @@ const loginUser = asyncHandler(async(req,res)=>{
     .status(200)
     .cookie("token",token,options)
     .json(
-        new ApiResponse(200,userObj,"Logged In Successfully")
+        new ApiResponse(200,{user:userObj,organisation},"Logged In Successfully")
     )
 })
 

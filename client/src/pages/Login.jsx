@@ -6,6 +6,7 @@ import { toast } from "react-toastify"
 import { useDispatch, useSelector } from "react-redux"
 import { loginSuccess } from "../store/features/authSlice.js";
 import { useNavigate } from "react-router-dom";
+import { storeOrganisation } from "../store/features/orgSlice.js"
 
 const Login = () => {
 
@@ -24,7 +25,8 @@ const Login = () => {
       const data = await userLogin({email,password,role});
 
       if(data.success){
-        dispatch(loginSuccess(data.data))
+        dispatch(loginSuccess(data.data?.user))
+        dispatch(storeOrganisation(data.data?.organisation))
         toast.success(data.message)
         navigate('/')
       }

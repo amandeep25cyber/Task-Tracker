@@ -1,8 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-    organisation : null,
-    users : null,
+    organisation:null,
+    users:null,
 }
 
 const orgSlice = createSlice({
@@ -16,7 +16,7 @@ const orgSlice = createSlice({
             state.organisation = null;
         },
         storeUsers:(state,action)=>{
-            state.organisation = action.payload;
+            state.users = action.payload;
         }
     }
 })
