@@ -1,69 +1,11 @@
 import { Card, StatCard } from "../../components/ui/Card"
 import { Users, FolderKanban, CheckCircle2, Activity, TrendingUp } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { useDispatch, useSelector } from "react-redux"
+import { useEffect } from "react";
+import { getdashboardStats, getTeamPerformance } from "../../services/organisation.services";
+import { setTeamPerformance, storeDashboardStats } from "../../store/features/orgSlice";
 
-const performanceData = [
-  {
-            "month": "Jan",
-            "tasks": 0,
-            "users": 0
-        },
-        {
-            "month": "Feb",
-            "tasks": 0,
-            "users": 0
-        },
-        {
-            "month": "Mar",
-            "tasks": 0,
-            "users": 0
-        },
-        {
-            "month": "Apr",
-            "tasks": 0,
-            "users": 0
-        },
-        {
-            "month": "May",
-            "tasks": 0,
-            "users": 0
-        },
-        {
-            "month": "Jun",
-            "tasks": 0,
-            "users": 4
-        },
-        {
-            "month": "Jul",
-            "tasks": 0,
-            "users": 0
-        },
-        {
-            "month": "Aug",
-            "tasks": 0,
-            "users": 0
-        },
-        {
-            "month": "Sep",
-            "tasks": 0,
-            "users": 0
-        },
-        {
-            "month": "Oct",
-            "tasks": 0,
-            "users": 0
-        },
-        {
-            "month": "Nov",
-            "tasks": 0,
-            "users": 0
-        },
-        {
-            "month": "Dec",
-            "tasks": 0,
-            "users": 0
-        }
-];
 
 const recentActivity = [
   { user: "Sarah Johnson", action: "created project", target: "Website Redesign", time: "2 hours ago" },
@@ -74,6 +16,26 @@ const recentActivity = [
 ];
 
 const AdminDashboard = ()=> {
+
+  const performanceData = useSelector(state=>state.organisation.teamPerformance);
+  const statsData = useSelector(state=>state.organisation.dashboardStats);
+  const dispatch = useDispatch();
+
+  useEffect(()=>{
+    getDashboardData();
+  },[])
+
+  const getDashboardData = async()=>{
+    try {
+      const res = await getTeamPerformance();
+      const resStats = await getdashboardStats();
+      dispatch(setTeamPerformance(res?.data));
+      dispatch(storeDashboardStats(resStats?.data));
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -84,31 +46,31 @@ const AdminDashboard = ()=> {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Users"
-          value="2,543"
+          value={statsData ? statsData?.totalUsers : "0"}
           change="+12% from last month"
           icon={<Users className="w-6 h-6" />}
           trend="up"
         />
         <StatCard
           title="Active Projects"
-          value="48"
+          value={statsData ? statsData?.activeProjects : "0"}
           change="+5 new this week"
           icon={<FolderKanban className="w-6 h-6" />}
           trend="up"
         />
         <StatCard
           title="Completed Tasks"
-          value="1,247"
+          value={statsData ? statsData?.completedTasks : "0"}
           change="+8% completion rate"
           icon={<CheckCircle2 className="w-6 h-6" />}
           trend="up"
         />
         <StatCard
-          title="System Health"
-          value="99.8%"
-          change="All systems operational"
+          title="Pending Tasks"
+          value={statsData ? statsData?.pendingTasks : "0"}
+          change="-2% completion rate"
           icon={<Activity className="w-6 h-6" />}
-          trend="neutral"
+          trend="down"
         />
       </div>
 

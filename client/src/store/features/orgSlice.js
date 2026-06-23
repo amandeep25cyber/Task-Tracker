@@ -21,20 +21,20 @@ const orgSlice = createSlice({
             state.users = action.payload;
         },
         storeDashboardStats:(state,action)=>{
-            state.action = action.payload;
+            state.dashboardStats = action.payload;
         },
         deleteDashboardStats:(state,action)=>{
-            state.action = null;
+            state.dashboardStats = null;
         },
         setTeamPerformance:(state,action)=>{
-            state.action = action.payload;
+            state.teamPerformance = action.payload;
         },
         deleteTeamPerformance:(state,action)=>{
-            state.action = [];
+            state.teamPerformance = [];
         }
 
     }
 })
 
-export const { storeOrganisation, deleteOrganisation, storeUsers } = orgSlice.actions;
+export const { storeOrganisation, deleteOrganisation, storeUsers, storeDashboardStats, deleteDashboardStats, setTeamPerformance,deleteTeamPerformance } = orgSlice.actions;
 export default orgSlice.reducer;

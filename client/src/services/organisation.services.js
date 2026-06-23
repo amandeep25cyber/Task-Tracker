@@ -1,8 +1,8 @@
 import axios from "axios"
 
-const getUsers = async()=>{
+const apiUrl = import.meta.env.VITE_API_URL;
 
-    const apiUrl = import.meta.env.VITE_API_URL;
+const getUsers = async()=>{
 
     const res = await axios.get(`${apiUrl}/organisation/users`,{
         withCredentials:true
@@ -11,6 +11,24 @@ const getUsers = async()=>{
     return res?.data;
 }
 
+const getTeamPerformance = async()=>{
+    const res = await axios.get(`${apiUrl}/organisation/dashboard/team-performance`,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
+const getdashboardStats = async()=>{
+    const res = await axios.get(`${apiUrl}/organisation/dashboard/stats`,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
 export {
     getUsers,
+    getTeamPerformance,
+    getdashboardStats,
 }
