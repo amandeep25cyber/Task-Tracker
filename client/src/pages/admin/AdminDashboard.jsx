@@ -3,12 +3,66 @@ import { Users, FolderKanban, CheckCircle2, Activity, TrendingUp } from "lucide-
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 
 const performanceData = [
-  { month: "Jan", tasks: 65, users: 40 },
-  { month: "Feb", tasks: 78, users: 48 },
-  { month: "Mar", tasks: 90, users: 55 },
-  { month: "Apr", tasks: 81, users: 62 },
-  { month: "May", tasks: 95, users: 70 },
-  { month: "Jun", tasks: 110, users: 78 },
+  {
+            "month": "Jan",
+            "tasks": 0,
+            "users": 0
+        },
+        {
+            "month": "Feb",
+            "tasks": 0,
+            "users": 0
+        },
+        {
+            "month": "Mar",
+            "tasks": 0,
+            "users": 0
+        },
+        {
+            "month": "Apr",
+            "tasks": 0,
+            "users": 0
+        },
+        {
+            "month": "May",
+            "tasks": 0,
+            "users": 0
+        },
+        {
+            "month": "Jun",
+            "tasks": 0,
+            "users": 4
+        },
+        {
+            "month": "Jul",
+            "tasks": 0,
+            "users": 0
+        },
+        {
+            "month": "Aug",
+            "tasks": 0,
+            "users": 0
+        },
+        {
+            "month": "Sep",
+            "tasks": 0,
+            "users": 0
+        },
+        {
+            "month": "Oct",
+            "tasks": 0,
+            "users": 0
+        },
+        {
+            "month": "Nov",
+            "tasks": 0,
+            "users": 0
+        },
+        {
+            "month": "Dec",
+            "tasks": 0,
+            "users": 0
+        }
 ];
 
 const recentActivity = [

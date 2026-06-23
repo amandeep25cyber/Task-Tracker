@@ -3,6 +3,8 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
     organisation:null,
     users:null,
+    dashboardStats:null,
+    teamPerformance:[]
 }
 
 const orgSlice = createSlice({
@@ -17,7 +19,20 @@ const orgSlice = createSlice({
         },
         storeUsers:(state,action)=>{
             state.users = action.payload;
+        },
+        storeDashboardStats:(state,action)=>{
+            state.action = action.payload;
+        },
+        deleteDashboardStats:(state,action)=>{
+            state.action = null;
+        },
+        setTeamPerformance:(state,action)=>{
+            state.action = action.payload;
+        },
+        deleteTeamPerformance:(state,action)=>{
+            state.action = [];
         }
+
     }
 })
 
