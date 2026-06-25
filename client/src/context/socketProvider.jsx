@@ -6,11 +6,11 @@ import { useSelector } from "react-redux"
 const SocketProvider = ({children}) =>{
     const [socket,setSocket] = useState(null);
 
-    const { isloggedIn, user } = useSelector(state=>state.auth)
+    const { isLoggedIn, user } = useSelector(state=>state.auth)
 
     useEffect(()=>{
 
-        if(!(isloggedIn && user)) return;
+        if(!(isLoggedIn && user)) return;
 
         const socketInstance = io("http://localhost:8080");
 
@@ -19,12 +19,12 @@ const SocketProvider = ({children}) =>{
         return () => {
             socketInstance.disconnect();
         }
-    },[isloggedIn,user])
+    },[isLoggedIn,user])
 
     return (
-        <SocketContext value={socket}>
+        <SocketContext.Provider value={socket}>
             {children}
-        </SocketContext>
+        </SocketContext.Provider>
     )
 }
 
