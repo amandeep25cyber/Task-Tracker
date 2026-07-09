@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const taskSchema = new mongoose.Schema(
   {
-    organization: {
+    organisation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
     },

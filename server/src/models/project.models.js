@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 const projectSchema = new mongoose.Schema(
   {
-    organization: {
+    organisation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
     },

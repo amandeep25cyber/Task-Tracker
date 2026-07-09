@@ -121,7 +121,7 @@ const getDashboardTeamPerformance = asyncHandler(async(req,res)=>{
     const taskStats = await Task.aggregate([
     {
         $match: {
-            organization: req.user.organisation
+            organisation: req.user.organisation
         }
     },
     {
@@ -167,9 +167,124 @@ const getDashboardTeamPerformance = asyncHandler(async(req,res)=>{
     )
 })
 
+const getProjectsStat = asyncHandler(async(req,res)=>{
+    //fetch all projects
+    //fetch new projects this month
+    //fetch in-progress projects
+    //fetch completed projects
+    //fetch this week completed projects
+    //fetch at risk projects
+
+    const allProjects = await Project.countDocuments({
+        organisation:req?.user?.organisation
+    })
+    
+    //project created this month
+    const now = new Date();
+    
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    
+    const projectsCreatedThisMonth = await Project.countDocuments({
+        organisation:req?.user?.organisation,
+        createdAt: {
+            $gte: startOfMonth,
+            $lt: startOfNextMonth
+        }
+    });
+
+    //fetch in progress projects count
+    const inProgressProjects = await Project.countDocuments({
+        organisation:req?.user?.organisation,
+        status:"active"
+    })
+
+    //Count completed Projects
+    const completedProjects = await Project.countDocuments({
+        organisation:req?.user?.organisation,
+        status:"completed"
+    })
+
+    //This week completed projects
+
+    const day = now.getDay(); // Sunday = 0
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - day);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+    const completedThisWeek = await Project.countDocuments({
+        organisation:req?.user?.organisation,
+        status: "completed",
+        updatedAt: {
+            $gte: startOfWeek,
+            $lt: endOfWeek
+        }
+    });
+
+    //fetch the number of projects which is at risk and are going to meet it's deadline
+    const today = new Date();
+
+    const tomorrowStart = new Date(today);
+    tomorrowStart.setDate(today.getDate() + 1);
+    tomorrowStart.setHours(0, 0, 0, 0);
+
+    const tomorrowEnd = new Date(tomorrowStart);
+    tomorrowEnd.setDate(tomorrowStart.getDate() + 1);
+
+    const projects = await Project.find({
+        organisation:req?.user?.organisation,
+        status: "active",
+        deadline: {
+            $gte: tomorrowStart,
+            $lt: tomorrowEnd
+        }
+    });
+
+    let atRiskProjects = 0;
+
+    for (const project of projects) {
+
+        const totalTasks = await Task.countDocuments({
+            project: project._id
+        });
+
+        const completedTasks = await Task.countDocuments({
+            project: project._id,
+            status: "done"
+        });
+
+        if (totalTasks === 0) continue;
+
+        const remainingPercentage =
+            ((totalTasks - completedTasks) / totalTasks) * 100;
+
+        if (remainingPercentage > 50) {
+            atRiskProjects++;
+        }
+    }
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200,{
+            allProjects,
+            projectsCreatedThisMonth,
+            inProgressProjects,
+            completedProjects,
+            atRiskProjects,
+            completedThisWeek
+        })
+    )
+})
+
 export {
     createNewUser,
     getAllUser,
     getDashboardStats,
     getDashboardTeamPerformance,
+    getProjectsStat,
 }
