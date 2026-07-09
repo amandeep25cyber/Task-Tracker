@@ -1,7 +1,11 @@
 import { Card } from "../../components/ui/Card";
 import { Table } from "../../components/ui/Table";
 import { Search, Plus, MoreVertical, Edit2, Trash2, Ban } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getUsers } from "../../services/organisation.services.js"
+import { useDispatch, useSelector } from "react-redux";
+import { storeUsers } from "../../store/features/orgSlice.js";
+import { formatDistanceToNow } from 'date-fns'
 
 const userData = [
   { id: 1, name: "Sarah Johnson", email: "sarah.j@company.com", role: "Admin", status: "Active", lastActive: "2 hours ago" },
@@ -14,6 +18,23 @@ const userData = [
 
 const UserManagement = ()=> {
   const [showActions, setShowActions] = useState(null);
+  const { users } = useSelector(state=>state.organisation);
+  const dispatch = useDispatch();
+
+  useEffect(()=>{
+    fetchUser();
+  },[])
+
+  const fetchUser = async ()=>{
+    try {
+      const users = await getUsers();
+      console.log(users.data)
+      dispatch(storeUsers(users?.data));
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   const columns = [
     {
@@ -36,8 +57,8 @@ const UserManagement = ()=> {
       accessor: "role",
       cell: (value) => (
         <span className={`px-3 py-1 rounded-lg text-xs font-medium ${
-          value === "Admin" ? "bg-purple-100 text-purple-700" :
-          value === "Project Manager" ? "bg-blue-100 text-blue-700" :
+          value === "admin" ? "bg-purple-100 text-purple-700" :
+          value === "manager" ? "bg-blue-100 text-blue-700" :
           "bg-gray-100 text-gray-700"
         }`}>
           {value}
@@ -49,7 +70,7 @@ const UserManagement = ()=> {
       accessor: "status",
       cell: (value) => (
         <span className={`px-3 py-1 rounded-lg text-xs font-medium ${
-          value === "Active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+          value === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
         }`}>
           {value}
         </span>
@@ -58,6 +79,11 @@ const UserManagement = ()=> {
     {
       header: "Last Active",
       accessor: "lastActive",
+      cell: (value) =>(
+        <p className="px-3 py-1 rounded-lg text-xs font-medium">
+        {value? formatDistanceToNow(new Date(value), { addSuffix: true }):"New User"}
+        </p>
+      )
     },
     {
       header: "Actions",
@@ -125,7 +151,7 @@ const UserManagement = ()=> {
             </select>
           </div>
         </div>
-        <Table columns={columns} data={userData} />
+        <Table columns={columns} data={users} />
       </Card>
     </div>
   );

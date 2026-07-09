@@ -2,7 +2,7 @@ import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
     organisation:null,
-    users:null,
+    users:[],
     dashboardStats:null,
     teamPerformance:[]
 }

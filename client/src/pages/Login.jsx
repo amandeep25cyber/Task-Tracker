@@ -16,7 +16,7 @@ const Login = () => {
   const [password,setPassword] = useState("");
   const [role,setRole] = useState("member");
   const [islogin,setIsLogin] = useState(false);
-  const { isLoggedIn } = useSelector(state=>state.auth);
+  const { isLoggedIn,user } = useSelector(state=>state.auth);
 
   const submitHandler = async(e)=>{
     e.preventDefault();
@@ -42,12 +42,12 @@ const Login = () => {
   }
 
   useEffect(()=>{
-    if(isLoggedIn){
+    if(isLoggedIn && user){
       navigate("/",{
         replace:true
       });
     }
-  },[isLoggedIn])
+  },[isLoggedIn,user])
 
   const isValidField = [email,password,role].every(field=>field.trim()!=="");
   
