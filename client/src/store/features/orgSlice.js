@@ -4,7 +4,8 @@ const initialState = {
     organisation:null,
     users:[],
     dashboardStats:null,
-    teamPerformance:[]
+    teamPerformance:[],
+    projectsStats:null
 }
 
 const orgSlice = createSlice({
@@ -31,10 +32,13 @@ const orgSlice = createSlice({
         },
         deleteTeamPerformance:(state,action)=>{
             state.teamPerformance = [];
+        },
+        storeProjectsStats:(state,action)=>{
+            state.projectsStats = action.payload;
         }
 
     }
 })
 
-export const { storeOrganisation, deleteOrganisation, storeUsers, storeDashboardStats, deleteDashboardStats, setTeamPerformance,deleteTeamPerformance } = orgSlice.actions;
+export const { storeOrganisation, deleteOrganisation, storeUsers, storeDashboardStats, deleteDashboardStats, setTeamPerformance,deleteTeamPerformance,storeProjectsStats } = orgSlice.actions;
 export default orgSlice.reducer;

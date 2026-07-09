@@ -27,8 +27,17 @@ const getdashboardStats = async()=>{
     return res?.data;
 }
 
+const getProjectsStats = async()=>{
+    const res = await axios.get(`${apiUrl}/organisation/projects/stats`,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
 export {
     getUsers,
     getTeamPerformance,
     getdashboardStats,
+    getProjectsStats,
 }

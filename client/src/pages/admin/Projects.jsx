@@ -1,6 +1,10 @@
 import { Card, StatCard } from "../../components/ui/Card";
 import { FolderKanban, Clock, CheckCircle2, AlertCircle, Plus, MoreVertical } from "lucide-react";
+import { useEffect } from "react";
 import { Link } from "react-router";
+import { getProjectsStats } from "../../services/organisation.services";
+import { useDispatch,useSelector } from "react-redux"
+import { storeProjectsStats } from "../../store/features/orgSlice";
 
 const projects = [
   {
@@ -46,6 +50,28 @@ const projects = [
 ];
 
 const Projects = ()=> {
+
+  const dispatch = useDispatch();
+  const { projectsStats } = useSelector(state=>state.organisation)
+
+  useEffect(()=>{
+    //calls the services
+    handleProjectsData();
+  },[])
+
+  const handleProjectsData = async()=>{
+    try {
+      const statsData = await getProjectsStats();
+      
+      dispatch(storeProjectsStats(statsData?.data))
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const inProgressPercentage = (projectsStats?.inProgressProjects)/(projectsStats?.allProjects)*100;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -62,31 +88,31 @@ const Projects = ()=> {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Projects"
-          value="48"
-          change="+5 this month"
+          value={projectsStats ? projectsStats?.allProjects : "0"}
+          change={`+${projectsStats ? projectsStats?.projectsCreatedThisMonth : "0"} this month`}
           icon={<FolderKanban className="w-6 h-6" />}
-          trend="up"
+          trend={projectsStats && projectsStats?.projectsCreatedThisMonth>0 ?"up" : "neutral"}
         />
         <StatCard
           title="In Progress"
-          value="32"
-          change="67% of total"
+          value={projectsStats ? projectsStats?.inProgressProjects : "0"}
+          change={`${inProgressPercentage?inProgressPercentage:"0"}% of total`}
           icon={<Clock className="w-6 h-6" />}
-          trend="neutral"
+          trend={inProgressPercentage>60 ? "down" : "neutral"}
         />
         <StatCard
           title="Completed"
-          value="14"
-          change="+3 this week"
+          value={projectsStats ? projectsStats?.completedProjects : "0"}
+          change={`+${projectsStats ? projectsStats?.completedThisWeek : "0"} this week`}
           icon={<CheckCircle2 className="w-6 h-6" />}
-          trend="up"
+          trend={projectsStats && projectsStats?.completedThisWeek>0 ?"up" : "neutral"}
         />
         <StatCard
           title="At Risk"
-          value="2"
-          change="Needs attention"
+          value={projectsStats ? projectsStats?.atRiskProjects : "0"}
+          change={projectsStats && projectsStats?.atRiskProjects == 0 ? "No Worry": "Needs attention"}
           icon={<AlertCircle className="w-6 h-6" />}
-          trend="down"
+          trend={projectsStats && projectsStats?.atRiskProjects == 0 ? "up": "down"}
         />
       </div>
 
