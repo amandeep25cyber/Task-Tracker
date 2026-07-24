@@ -35,9 +35,18 @@ const getProjectsStats = async()=>{
     return res?.data;
 }
 
+const createUser = async(data)=>{
+    const res = await axios.post(`${apiUrl}/organisation/user`,data,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
 export {
     getUsers,
     getTeamPerformance,
     getdashboardStats,
     getProjectsStats,
+    createUser,
 }

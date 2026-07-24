@@ -6,6 +6,7 @@ import { getUsers } from "../../services/organisation.services.js"
 import { useDispatch, useSelector } from "react-redux";
 import { storeUsers } from "../../store/features/orgSlice.js";
 import { formatDistanceToNow } from 'date-fns'
+import { useNavigate } from "react-router-dom";
 
 const userData = [
   { id: 1, name: "Sarah Johnson", email: "sarah.j@company.com", role: "Admin", status: "Active", lastActive: "2 hours ago" },
@@ -20,6 +21,7 @@ const UserManagement = ()=> {
   const [showActions, setShowActions] = useState(null);
   const { users } = useSelector(state=>state.organisation);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(()=>{
     fetchUser();
@@ -28,7 +30,6 @@ const UserManagement = ()=> {
   const fetchUser = async ()=>{
     try {
       const users = await getUsers();
-      console.log(users.data)
       dispatch(storeUsers(users?.data));
 
     } catch (error) {
@@ -121,7 +122,7 @@ const UserManagement = ()=> {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">User Management</h1>
           <p className="text-gray-600">Manage all users and their permissions</p>
         </div>
-        <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors">
+        <button onClick={()=>navigate('/admin/new-user')} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors">
           <Plus className="w-4 h-4" />
           Add User
         </button>

@@ -281,10 +281,52 @@ const getProjectsStat = asyncHandler(async(req,res)=>{
     )
 })
 
+const getProjects = asyncHandler(async(req,res)=>{
+
+    const projects = await Project.find({ 
+        organisation:req?.user?.organisation
+     });
+
+    const projectData = [];
+
+    for (const project of projects) {
+
+        const totalTasks = await Task.countDocuments({
+            project: project._id
+        });
+
+        const completedTasks = await Task.countDocuments({
+            project: project._id,
+            status: "done"
+        });
+
+        const progress =
+            totalTasks === 0
+                ? 0
+                : Math.round((completedTasks / totalTasks) * 100);
+
+        projectData.push({
+            id: project._id,
+            name: project.title,
+            status: project.status,
+            progress,
+            team: project.members,
+            deadline: project.deadline,
+            tasks: {
+                total: totalTasks,
+                completed: completedTasks
+            }
+        });
+    }
+
+    res.json(projectData);
+})
+
 export {
     createNewUser,
     getAllUser,
     getDashboardStats,
     getDashboardTeamPerformance,
     getProjectsStat,
+    getProjects,
 }

@@ -28,6 +28,7 @@ import Projects from "./pages/admin/Projects.jsx"
 import Setting from "./pages/admin/Settings.jsx"
 import Teams from "./pages/admin/Teams.jsx"
 import UserManagement from "./pages/admin/UserManagement.jsx"
+import NewUser from "./pages/admin/NewUser.jsx";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -70,6 +71,7 @@ const App = () => {
             <Route path="analytics" element={<Analytics/>} />
             <Route path="billing" element={<Billing/>} />
             <Route path="settings" element={<Setting/>} />
+            <Route path="new-user" element={<NewUser/>}/> 
           </Route>
 
           {/* Manager Routes */}
