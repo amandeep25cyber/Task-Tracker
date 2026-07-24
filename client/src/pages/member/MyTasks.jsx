@@ -1,9 +1,90 @@
-import React from 'react'
+import { KanbanBoard } from "../../components/ui/KanbanBoard";
+import { Filter, Calendar } from "lucide-react";
+import { useState } from "react";
 
-const MyTasks = () => {
+const initialTodo = [
+  { id: "1", title: "Update user profile page", description: "Implement new design for profile settings", priority: "high", tags: ["Frontend"] },
+  { id: "2", title: "Fix navigation bug", description: "Menu not closing on mobile devices", priority: "high", tags: ["Bug Fix"] },
+  { id: "3", title: "Write unit tests", description: "Add tests for authentication module", priority: "medium", tags: ["Testing"] },
+];
+
+const initialInProgress = [
+  { id: "4", title: "Complete homepage design", description: "Finalize hero section and CTA buttons", priority: "high", tags: ["Design", "UI"] },
+  { id: "5", title: "Review pull request", description: "Check code changes for API integration", priority: "medium", tags: ["Code Review"] },
+];
+
+const initialDone = [
+  { id: "6", title: "Setup development environment", priority: "low", tags: ["Setup"] },
+  { id: "7", title: "Update documentation", priority: "medium", tags: ["Documentation"] },
+  { id: "8", title: "Create wireframes", priority: "medium", tags: ["Design"] },
+];
+
+const MyTasks = ()=> {
+  const [todo, setTodo] = useState(initialTodo);
+  const [inProgress, setInProgress] = useState(initialInProgress);
+  const [done, setDone] = useState(initialDone);
+
+  const getAll = () => [
+    ...todo.map((t) => ({ ...t, col: "todo" })),
+    ...inProgress.map((t) => ({ ...t, col: "inProgress" })),
+    ...done.map((t) => ({ ...t, col: "done" })),
+  ];
+
+  const handleTaskMove = (taskId, toColumn) => {
+    const all = getAll();
+    const found = all.find((t) => t.id === taskId);
+    if (!found) return;
+    const { col: fromCol, ...task } = found;
+
+    const remove = (arr) => arr.filter((t) => t.id !== taskId);
+    const add = (arr) => [...arr, task];
+
+    if (fromCol === "todo") setTodo(remove); else if (fromCol === "inProgress") setInProgress(remove); else setDone(remove);
+    if (toColumn === "todo") setTodo(add); else if (toColumn === "inProgress") setInProgress(add); else setDone(add);
+  };
+
   return (
-    <div>MyTasks</div>
-  )
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">My Tasks</h1>
+          <p className="text-gray-600">{todo.length + inProgress.length + done.length} tasks · {done.length} completed</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm text-gray-700">
+            <Filter className="w-4 h-4" />
+            Filter
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm text-gray-700">
+            <Calendar className="w-4 h-4" />
+            This Week
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">To Do</p>
+          <p className="text-3xl font-bold text-gray-900">{todo.length}</p>
+        </div>
+        <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">In Progress</p>
+          <p className="text-3xl font-bold text-blue-700">{inProgress.length}</p>
+        </div>
+        <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+          <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider mb-2">Completed</p>
+          <p className="text-3xl font-bold text-emerald-700">{done.length}</p>
+        </div>
+      </div>
+
+      <KanbanBoard
+        todoTasks={todo}
+        inProgressTasks={inProgress}
+        doneTasks={done}
+        onTaskMove={handleTaskMove}
+      />
+    </div>
+  );
 }
 
-export default MyTasks
+export default MyTasks;

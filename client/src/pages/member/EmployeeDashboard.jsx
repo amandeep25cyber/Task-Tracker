@@ -86,7 +86,7 @@ const EmployeeDashboard = ()=> {
               <div key={idx} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs font-medium">{msg.from.substring(0, 2).toUpperCase()}</span>
                     </div>
                     <div>
