@@ -46,6 +46,12 @@ const taskSchema = new mongoose.Schema(
     deadline: {
       type: Date,
     },
+
+    tags:[
+      {
+        type:String,
+      }
+    ]
   },
   { timestamps: true },
 );
