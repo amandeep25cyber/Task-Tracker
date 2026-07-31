@@ -51,6 +51,21 @@ const userSchema = new mongoose.Schema(
     lastActive: {
       type: Date,
       default: null,
+    },
+
+    phoneNo:{
+      type:Number,
+      default:null,
+    },
+
+    bio:{
+      type:String,
+      default:"Hii! I am new here."
+    },
+
+    jobRole:{
+      type:String,
+      default:"Trainee"
     }
   },
   { timestamps: true },
