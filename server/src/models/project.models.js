@@ -12,6 +12,11 @@ const projectSchema = new mongoose.Schema(
       required: true,
     },
 
+    taskCount:{
+      type:Number,
+      default:0
+    },
+
     description: {
       type: String,
     },
