@@ -107,7 +107,7 @@ const ProjectDetail = ({ role }) => {
 
   return (
     <div className="space-y-6">
-      <Link to={`/manager`} className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
+      <Link to={`${basePath}/projects`} className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors">
         <ArrowLeft className="w-4 h-4" />
         Back to Projects
       </Link>

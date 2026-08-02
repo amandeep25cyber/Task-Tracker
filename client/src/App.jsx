@@ -93,7 +93,7 @@ const App = () => {
             <Route path="chat" element={<Chats/>}/> 
             <Route path="reports" element={<Reports/>}/> 
             <Route path="settings" element={<Settings/>}/> 
-            <Route path="project/:id" element={<ProjectDetail/>}/> 
+            <Route path="project/:id" element={<ProjectDetail role={role}/>}/> 
           </Route>
 
           {/* Member Routes */}
