@@ -29,6 +29,7 @@ import Setting from "./pages/admin/Settings.jsx"
 import Teams from "./pages/admin/Teams.jsx"
 import UserManagement from "./pages/admin/UserManagement.jsx"
 import NewUser from "./pages/admin/NewUser.jsx";
+import ProjectDetail from "./components/ProjectDetail.jsx";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -92,6 +93,7 @@ const App = () => {
             <Route path="chat" element={<Chats/>}/> 
             <Route path="reports" element={<Reports/>}/> 
             <Route path="settings" element={<Settings/>}/> 
+            <Route path="project/:id" element={<ProjectDetail/>}/> 
           </Route>
 
           {/* Member Routes */}
