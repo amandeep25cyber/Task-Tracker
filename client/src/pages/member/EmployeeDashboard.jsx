@@ -1,19 +1,36 @@
 import { StatCard, Card } from "../../components/ui/Card";
-import { CheckSquare, Clock, CheckCircle2, MessageSquare } from "lucide-react";
+import { CheckSquare, Clock, CheckCircle2, MessageSquare, Plus, Calendar, FolderOpen, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const todayTasks = [
-  { id: 1, title: "Complete homepage design", priority: "high", status: "in-progress", project: "Website Redesign" },
-  { id: 2, title: "Review pull request", priority: "medium", status: "todo", project: "API Integration" },
-  { id: 3, title: "Update documentation", priority: "low", status: "todo", project: "Mobile App" },
-];
+const PRIORITY_BADGE = {
+  high: "bg-red-100 text-red-700",
+  medium: "bg-amber-100 text-amber-700",
+  low: "bg-gray-100 text-gray-600",
+};
 
-const recentMessages = [
-  { from: "Mike Chen", message: "Can you review the latest design?", time: "10 min ago", unread: true },
-  { from: "Sarah Johnson", message: "Great work on the landing page!", time: "1 hour ago", unread: true },
-  { from: "Emily Davis", message: "Team meeting at 3 PM today", time: "2 hours ago", unread: false },
-];
+const EmployeeDashboard = () => {
+  const navigate = useNavigate();
 
-const EmployeeDashboard = ()=> {
+  const [tasks, setTasks] = useState([
+    { id: 1, title: "Complete homepage design", priority: "high", status: "in-progress", project: "Website Redesign", done: false },
+    { id: 2, title: "Review pull request #42", priority: "medium", status: "todo", project: "API Integration", done: false },
+    { id: 3, title: "Update API documentation", priority: "low", status: "todo", project: "Mobile App", done: false },
+    { id: 4, title: "Fix login page bug", priority: "high", status: "todo", project: "Auth Module", done: false },
+  ]);
+
+  const recentMessages = [
+    { from: "Mike Chen", message: "Can you review the latest design?", time: "10 min ago", unread: true },
+    { from: "Sarah Johnson", message: "Great work on the landing page!", time: "1 hour ago", unread: true },
+    { from: "Emily Davis", message: "Team meeting at 3 PM today", time: "2 hours ago", unread: false },
+  ];
+
+  const toggleDone = (id) => setTasks((p) => p.map((t) => t.id === id ? { ...t, done: !t.done } : t));
+
+  const completed = tasks.filter((t) => t.done).length;
+  const active = tasks.filter((t) => !t.done).length;
+  const high = tasks.filter((t) => t.priority === "high" && !t.done).length;
+
   return (
     <div className="space-y-6">
       <div>
@@ -21,112 +38,83 @@ const EmployeeDashboard = ()=> {
         <p className="text-gray-600">Here's what you need to focus on today</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Today's Tasks"
-          value="8"
-          change="3 high priority"
-          icon={<CheckSquare className="w-6 h-6" />}
-          trend="neutral"
-        />
-        <StatCard
-          title="Pending Work"
-          value="12"
-          change="Across 3 projects"
-          icon={<Clock className="w-6 h-6" />}
-          trend="neutral"
-        />
-        <StatCard
-          title="Completed This Week"
-          value="24"
-          change="+6 from last week"
-          icon={<CheckCircle2 className="w-6 h-6" />}
-          trend="up"
-        />
-        <StatCard
-          title="Unread Messages"
-          value="5"
-          change="2 from managers"
-          icon={<MessageSquare className="w-6 h-6" />}
-          trend="neutral"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <StatCard title="Active Tasks" value={String(active)} change={`${high} high priority`} icon={<CheckSquare className="w-6 h-6" />} trend="neutral" />
+        <StatCard title="Completed Today" value={String(completed)} change="Keep it up!" icon={<CheckCircle2 className="w-6 h-6" />} trend="up" />
+        <StatCard title="Hours Logged" value="6.5h" change="+1.5h vs yesterday" icon={<Clock className="w-6 h-6" />} trend="up" />
+        <StatCard title="Unread Messages" value={String(recentMessages.filter((m) => m.unread).length)} change="2 mentions" icon={<MessageSquare className="w-6 h-6" />} trend="neutral" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="Today's Tasks">
-          <div className="space-y-3">
-            {todayTasks.map((task) => (
-              <div key={task.id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-gray-900 text-sm">{task.title}</h4>
-                  <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                    task.priority === "high" ? "bg-red-100 text-red-700" :
-                    task.priority === "medium" ? "bg-yellow-100 text-yellow-700" :
-                    "bg-gray-100 text-gray-700"
-                  }`}>
-                    {task.priority}
-                  </span>
+          <div className="space-y-2 mb-4">
+            {tasks.map((task) => (
+              <div key={task.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${task.done ? "bg-gray-50 border-gray-100 opacity-60" : "bg-white border-gray-200 hover:border-blue-200"}`}>
+                <button
+                  onClick={() => toggleDone(task.id)}
+                  className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${task.done ? "bg-emerald-500 border-emerald-500" : "border-gray-300 hover:border-blue-400"}`}
+                >
+                  {task.done && <CheckCircle2 className="w-3 h-3 text-white" />}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium truncate ${task.done ? "line-through text-gray-400" : "text-gray-900"}`}>{task.title}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{task.project}</p>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{task.project}</p>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                  <span className="text-sm text-gray-600">Mark as complete</span>
-                </div>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${PRIORITY_BADGE[task.priority]}`}>{task.priority}</span>
               </div>
             ))}
           </div>
-          <button className="w-full mt-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700">
-            View All Tasks
+          <button onClick={() => navigate("/member/tasks")} className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-xl border border-blue-100 transition-colors">
+            View All Tasks <ArrowRight className="w-4 h-4" />
           </button>
         </Card>
 
-        <Card title="Recent Messages">
-          <div className="space-y-3">
-            {recentMessages.map((msg, idx) => (
-              <div key={idx} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs font-medium">{msg.from.substring(0, 2).toUpperCase()}</span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 text-sm">{msg.from}</p>
-                      <p className="text-sm text-gray-600">{msg.message}</p>
-                    </div>
+        <div className="space-y-5">
+          <Card title="Recent Messages">
+            <div className="space-y-3 mb-4">
+              {recentMessages.map((msg, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
+                    <span className="text-white text-[10px] font-bold">{msg.from.split(" ").map((w) => w[0]).join("")}</span>
                   </div>
-                  {msg.unread && (
-                    <span className="w-2 h-2 bg-blue-600 rounded-full"></span>
-                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-gray-900">{msg.from}</span>
+                      {msg.unread && <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />}
+                      <span className="text-xs text-gray-400 ml-auto">{msg.time}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 truncate">{msg.message}</p>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 ml-13">{msg.time}</p>
-              </div>
-            ))}
-          </div>
-          <button className="w-full mt-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700">
-            Open Chat
-          </button>
-        </Card>
-      </div>
+              ))}
+            </div>
+            <button onClick={() => navigate("/member/chat")} className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-xl border border-blue-100 transition-colors">
+              Open Chat <ArrowRight className="w-4 h-4" />
+            </button>
+          </Card>
 
-      <Card title="Quick Actions">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-6">
-          <button className="p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors">
-            <CheckSquare className="w-8 h-8 text-blue-600 mb-2" />
-            <p className="font-medium text-gray-900">View My Tasks</p>
-            <p className="text-sm text-gray-600 mt-1">12 pending tasks</p>
-          </button>
-          <button className="p-4 bg-green-50 rounded-xl hover:bg-green-100 transition-colors">
-            <MessageSquare className="w-8 h-8 text-green-600 mb-2" />
-            <p className="font-medium text-gray-900">Team Chat</p>
-            <p className="text-sm text-gray-600 mt-1">5 unread messages</p>
-          </button>
-          <button className="p-4 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">
-            <Clock className="w-8 h-8 text-purple-600 mb-2" />
-            <p className="font-medium text-gray-900">Time Tracking</p>
-            <p className="text-sm text-gray-600 mt-1">Log your hours</p>
-          </button>
+          <div className="bg-linear-to-br from-blue-600 to-blue-700 rounded-2xl p-5 text-white">
+            <h3 className="font-semibold mb-1">Quick Actions</h3>
+            <p className="text-blue-200 text-sm mb-4">Jump right into your work</p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: "New Task", icon: Plus, path: "/member/tasks" },
+                { label: "My Calendar", icon: Calendar, path: "/member/calendar" },
+                { label: "Open Chat", icon: MessageSquare, path: "/member/chat" },
+                { label: "My Files", icon: FolderOpen, path: "/member/files" },
+              ].map(({ label, icon: Icon, path }) => (
+                <button
+                  key={label}
+                  onClick={() => navigate(path)}
+                  className="flex items-center gap-2 bg-white/15 hover:bg-white/25 backdrop-blur-sm rounded-xl py-2.5 px-3 text-sm font-medium transition-colors"
+                >
+                  <Icon className="w-4 h-4" /> {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
