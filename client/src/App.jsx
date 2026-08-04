@@ -71,6 +71,7 @@ const App = () => {
             <Route path="analytics" element={<Analytics/>} />
             <Route path="billing" element={<Billing/>} />
             <Route path="settings" element={<Setting/>} />
+            <Route path="project/:id" element={<ProjectDetail role={role}/>}/>
           </Route>
 
           {/* Manager Routes */}
