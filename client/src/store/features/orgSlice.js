@@ -35,10 +35,13 @@ const orgSlice = createSlice({
         },
         storeProjectsStats:(state,action)=>{
             state.projectsStats = action.payload;
+        },
+        addUsers:(state,action)=>{
+            state.users.unshift(action.payload)
         }
 
     }
 })
 
-export const { storeOrganisation, deleteOrganisation, storeUsers, storeDashboardStats, deleteDashboardStats, setTeamPerformance,deleteTeamPerformance,storeProjectsStats } = orgSlice.actions;
+export const { storeOrganisation, deleteOrganisation, storeUsers, storeDashboardStats, deleteDashboardStats, setTeamPerformance,deleteTeamPerformance,storeProjectsStats,addUsers } = orgSlice.actions;
 export default orgSlice.reducer;

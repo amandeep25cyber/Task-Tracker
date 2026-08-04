@@ -28,7 +28,6 @@ import Projects from "./pages/admin/Projects.jsx"
 import Setting from "./pages/admin/Settings.jsx"
 import Teams from "./pages/admin/Teams.jsx"
 import UserManagement from "./pages/admin/UserManagement.jsx"
-import NewUser from "./pages/admin/NewUser.jsx";
 import ProjectDetail from "./components/ProjectDetail.jsx";
 
 const App = () => {
@@ -72,7 +71,6 @@ const App = () => {
             <Route path="analytics" element={<Analytics/>} />
             <Route path="billing" element={<Billing/>} />
             <Route path="settings" element={<Setting/>} />
-            <Route path="new-user" element={<NewUser/>}/> 
           </Route>
 
           {/* Manager Routes */}
