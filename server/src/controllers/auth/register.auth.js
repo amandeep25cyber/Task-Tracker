@@ -48,7 +48,8 @@ const registerController = async(req,res)=>{
             organisation:organisation[0],
             name,
             email,
-            password
+            password,
+            role:"admin"
         }],{session})
 
         if(!adminUser[0]){

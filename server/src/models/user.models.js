@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       enum: ["admin", "manager", "member"],
-      default: "admin",
+      default: "member",
     },
 
     avatar: {
@@ -54,7 +54,7 @@ const userSchema = new mongoose.Schema(
     },
 
     phoneNo:{
-      type:Number,
+      type:String,
       default:null,
     },
 
@@ -81,8 +81,8 @@ userSchema.pre("save",async function (next) {
     next;
 });
 
-userSchema.methods.isPasswordCorrect = function (password){
-  return bcrypt.compareSync(password,this.password);
+userSchema.methods.isPasswordCorrect = async function (password){
+  return await bcrypt.compare(password,this.password);
 }
 
 userSchema.methods.generateToken = function () {
