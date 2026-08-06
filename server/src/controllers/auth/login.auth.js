@@ -4,6 +4,8 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
 import { Organisation } from "../../models/organization.models.js"
 
+import { getCookieOptions } from "../../utils/cookieOptions.js";
+
 const loginUser = asyncHandler(async(req,res)=>{
 
     const {email,password,role} = req.body;
@@ -42,10 +44,7 @@ const loginUser = asyncHandler(async(req,res)=>{
         throw new ApiError(500,"Something went wrong");
     }
 
-    const options = {
-        httpOnly:true,
-        secure:true
-    }
+    const options = getCookieOptions();
 
     res
     .status(200)

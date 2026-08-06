@@ -1,23 +1,21 @@
 import { ApiError } from "../utils/ApiError.js";
 import { asyncHandler } from "../utils/AsyncHandler.js";
-import jwt, { decode } from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
 const verifyUser = asyncHandler(async(req,res,next)=>{
-    const token = req.cookies?.token;
+    const token = req.cookies?.token || req.header("Authorization")?.replace("Bearer ", "");
 
     if(!token){
-        throw new ApiError(400,"Invalid Token");
+        throw new ApiError(401, "Invalid or missing token");
     }
 
-    const decodedToken = await jwt.verify(token,process.env.JWT_SECRET);
-
-    if(!decodedToken){
-        throw new ApiError(400,"Unauthorized User");
+    try {
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decodedToken;
+        next();
+    } catch (error) {
+        throw new ApiError(401, "Unauthorized or expired token");
     }
-
-    req.user = decodedToken;
-
-    next();
 })
 
 export {

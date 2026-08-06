@@ -6,6 +6,7 @@ import { Organisation } from "../../models/organization.models.js"
 import { generateSlug } from "../../utils/generateSlug.js";
 import { User } from "../../models/user.models.js"
 import { ApiResponse } from "../../utils/ApiResponse.js"
+import { getCookieOptions } from "../../utils/cookieOptions.js";
 
 const registerController = async(req,res)=>{
     const session = await mongoose.startSession();
@@ -69,10 +70,7 @@ const registerController = async(req,res)=>{
         await session.commitTransaction();
         await session.endSession();
 
-        const options = {
-            httpOnly:true,
-            secure:true
-        }
+        const options = getCookieOptions();
 
         res
         .status(201)

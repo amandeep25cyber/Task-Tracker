@@ -1,12 +1,10 @@
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
+import { getCookieOptions } from "../../utils/cookieOptions.js";
 
 const logoutController = asyncHandler(async (req,res)=>{
 
-    const options = {
-            httpOnly:true,
-            secure:true
-        }
+    const options = getCookieOptions();
 
     res
     .clearCookie("token",options)

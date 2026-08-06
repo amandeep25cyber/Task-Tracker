@@ -6,8 +6,18 @@ import organisationRoute from "./src/routes/organisation.routes.js"
 
 const app = express();
 
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim()) 
+  : ["http://localhost:5173", "http://localhost:3000"];
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin) || process.env.CORS_ORIGIN === "*") {
+            callback(null, true);
+        } else {
+            callback(null, true);
+        }
+    },
     credentials: true,
 }));
 
