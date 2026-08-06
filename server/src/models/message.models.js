@@ -2,9 +2,10 @@ import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema(
   {
-    organization: {
+    organisation: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Organization",
+      ref: "Organisation",
+      required:true,
     },
 
     project: {
@@ -15,6 +16,12 @@ const messageSchema = new mongoose.Schema(
     sender: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required:true,
+    },
+
+    receiver: { 
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
     },
 
     message: {

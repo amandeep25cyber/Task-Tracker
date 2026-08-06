@@ -5,11 +5,13 @@ const taskSchema = new mongoose.Schema(
     organisation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
+      required:true
     },
 
     project: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Project",
+      required:true
     },
 
     title: {
@@ -45,6 +47,11 @@ const taskSchema = new mongoose.Schema(
 
     deadline: {
       type: Date,
+    },
+
+    hoursLogged: {
+      type: Number,
+      default: 0, 
     },
 
     tags:[

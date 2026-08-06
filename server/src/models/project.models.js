@@ -5,6 +5,7 @@ const projectSchema = new mongoose.Schema(
     organisation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Organization",
+      required:true,
     },
 
     title: {
@@ -21,9 +22,16 @@ const projectSchema = new mongoose.Schema(
       type: String,
     },
 
+    health: {
+      type: String,
+      enum: ["Good", "Warning", "Critical"],
+      default: "Good",
+    },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required:true
     },
 
     members: [
@@ -35,8 +43,8 @@ const projectSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["active", "completed", "archived"],
-      default: "active",
+      enum: ["Planning", "In Progress", "On Hold", "Completed"],
+      default: "Planning",
     },
 
     deadline: {
