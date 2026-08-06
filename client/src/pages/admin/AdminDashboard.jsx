@@ -32,7 +32,7 @@ const AdminDashboard = ()=> {
       dispatch(setTeamPerformance(res?.data));
       dispatch(storeDashboardStats(resStats?.data));
     } catch (error) {
-      console.log(error)
+      console.log(error?.response?.data?.message)
     }
   }
 

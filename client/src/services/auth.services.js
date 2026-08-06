@@ -31,6 +31,7 @@ const getCurrentUser = async(dispatch)=>{
     } catch (error) {
         dispatch(logout());
         dispatch(deleteOrganisation());
+        console.log(error?.response?.data?.message)
     }
 }
 

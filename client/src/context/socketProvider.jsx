@@ -12,7 +12,9 @@ const SocketProvider = ({children}) =>{
 
         if(!isLoggedIn ) return;
 
-        const socketInstance = io("http://localhost:8080");
+        const URI = import.meta.env.VITE_SOCKET_URI;
+
+        const socketInstance = io(URI);
 
         setSocket(socketInstance);
 
