@@ -1,7 +1,7 @@
 import {Router} from "express";
 import { verifyUser } from "../middlewares/verifyJWT.js"
 import { isAdmin } from "../middlewares/isAdmin.js"
-import { createNewUser, createProject, getAllUser, getDashboardStats, getDashboardTeamPerformance, getOrgUsers, getProjects, getProjectsStat } from "../controllers/organisation/user.organisation.js";
+import { createNewUser, createProject, getAllUser, getDashboardStats, getDashboardTeamPerformance, getOrgUsers, getProjects, getProjectsStat, getSingleProject } from "../controllers/organisation/user.organisation.js";
 
 const router = Router();
 
@@ -13,5 +13,6 @@ router.route('/projects').get(verifyUser,isAdmin,getProjects);
 router.route('/projects/stats').get(verifyUser,isAdmin,getProjectsStat);
 router.route('/project').post(verifyUser,isAdmin,createProject);
 router.route('/org-users').get(verifyUser,isAdmin,getOrgUsers);
+router.route('/project/:projectId').get(verifyUser,isAdmin,getSingleProject);
 
 export default router;

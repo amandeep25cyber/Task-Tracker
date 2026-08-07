@@ -284,8 +284,8 @@ const getProjectsStat = asyncHandler(async(req,res)=>{
 const getProjects = asyncHandler(async(req,res)=>{
 
     const projects = await Project.find({ 
-        organisation:req?.user?.organisation
-     });
+        organisation: req?.user?.organisation
+    }).populate("members", "name avatar"); 
 
     const projectData = [];
 
@@ -299,11 +299,9 @@ const getProjects = asyncHandler(async(req,res)=>{
             project: project._id,
             status: "done"
         });
-
-        const progress =
-            totalTasks === 0
-                ? 0
-                : Math.round((completedTasks / totalTasks) * 100);
+        const progress = totalTasks === 0
+            ? 0
+            : Math.round((completedTasks / totalTasks) * 100);
 
         projectData.push({
             id: project._id,
@@ -319,7 +317,9 @@ const getProjects = asyncHandler(async(req,res)=>{
         });
     }
 
-    res.json(projectData);
+    return res.status(200).json(
+        new ApiResponse(200, projectData, "Projects details fetched successfully")
+    );
 })
 
 const createProject = asyncHandler(async(req,res)=>{
@@ -382,6 +382,39 @@ const getOrgUsers = asyncHandler(async (req, res) => {
     );
 });
 
+const getSingleProject = asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    const orgId = req.user.organisation;
+
+    const project = await Project.findOne({ 
+        _id: projectId, 
+        organisation: orgId 
+    }).populate("members", "name email avatar")
+      .populate("createdBy", "name avatar");
+
+    if (!project) {
+        throw new ApiError(404, "Project not found or you don't have access");
+    }
+
+    const tasks = await Task.find({ project: projectId })
+        .populate("assignedTo", "name avatar") 
+        .sort({ createdAt: -1 });
+
+    // Kanban Board ke liye Tasks ko format karna
+    const formattedTasks = {
+        todo: tasks.filter(task => task.status === "todo"),
+        inProgress: tasks.filter(task => task.status === "in-progress"),
+        done: tasks.filter(task => task.status === "done")
+    };
+
+    return res.status(200).json(
+        new ApiResponse(200, { 
+            project, 
+            tasks: formattedTasks
+        }, "Project details and tasks fetched successfully")
+    );
+});
+
 export {
     createNewUser,
     getAllUser,
@@ -391,4 +424,5 @@ export {
     getProjects,
     createProject,
     getOrgUsers,
+    getSingleProject,
 }
