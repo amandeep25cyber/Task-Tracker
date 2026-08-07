@@ -322,6 +322,66 @@ const getProjects = asyncHandler(async(req,res)=>{
     res.json(projectData);
 })
 
+const createProject = asyncHandler(async(req,res)=>{
+
+    const { title, description, status, health, deadline, members } = req.body;
+    
+    if (!title) {
+        throw new ApiError(400, "Project title is required");
+    }
+
+    // 2. Organization cross-check (Optional but highly recommended)
+    // Agar frontend ne members bheje hain, toh ensure karo sab same org ke hain
+    if (members && members.length > 0) {
+        const validMembers = await User.countDocuments({
+            _id: { $in: members },
+            organisation: req.user.organisation // Token se aayi Org ID
+        });
+        
+        if (validMembers !== members.length) {
+            throw new ApiError(403, "Some members do not belong to your organisation");
+        }
+    }
+
+    const newProject = await Project.create({
+        organisation: req.user.organisation, 
+        createdBy: req.user._id,          
+        title,
+        description,
+        status: status || "Planning",
+        health: health || "Good",
+        deadline,
+        members: members || []
+    });
+
+    return res.status(201).json(
+        new ApiResponse(201,newProject,"Project created Successfully")
+    );
+})
+
+
+//for dropdown selecting members in project creation
+const getOrgUsers = asyncHandler(async (req, res) => {
+    
+    const orgId = req.user.organisation;
+    
+    // Agar frontend ne koi specific role manga hai (like ?role=manager)
+    const { role } = req.query; 
+
+    const query = { organisation: orgId };
+    if (role) {
+        query.role = role;
+    }
+
+    const users = await User.find(query)
+        .select("name email role avatar")
+        .sort({ createdAt: -1 }); // Naye users upar dikhein
+
+    return res.status(200).json(
+        new ApiResponse(200, users, "Organisation users fetched successfully")
+    );
+});
+
 export {
     createNewUser,
     getAllUser,
@@ -329,4 +389,6 @@ export {
     getDashboardTeamPerformance,
     getProjectsStat,
     getProjects,
+    createProject,
+    getOrgUsers,
 }
