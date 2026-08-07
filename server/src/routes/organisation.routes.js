@@ -1,7 +1,7 @@
 import {Router} from "express";
 import { verifyUser } from "../middlewares/verifyJWT.js"
 import { isAdmin } from "../middlewares/isAdmin.js"
-import { createNewUser, createProject, deleteProject, getAllUser, getDashboardStats, getDashboardTeamPerformance, getOrgUsers, getProjects, getProjectsStat, getSingleProject, updateProject } from "../controllers/organisation/user.organisation.js";
+import { createNewUser, createProject, createTask, deleteProject, getAllUser, getDashboardStats, getDashboardTeamPerformance, getOrgUsers, getProjects, getProjectsStat, getSingleProject, updateProject } from "../controllers/organisation/user.organisation.js";
 
 const router = Router();
 
@@ -16,5 +16,6 @@ router.route('/org-users').get(verifyUser,isAdmin,getOrgUsers);
 router.route('/project/:projectId').get(verifyUser,isAdmin,getSingleProject);
 router.route('/project/:projectId').put(verifyUser,isAdmin,updateProject);
 router.route('/project/:projectId').delete(verifyUser,isAdmin,deleteProject);
+router.route('/task').post(verifyUser,isAdmin,createTask);
 
 export default router;
