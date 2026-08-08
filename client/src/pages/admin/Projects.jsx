@@ -5,6 +5,10 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import { toast } from "react-toastify";
+import { getProjectsStats } from "../../services/organisation.services";
+import { useDispatch, useSelector } from "react-redux";
+import { storeProjectsStats } from "../../store/features/orgSlice.js";
 
 const ALL_MEMBERS = [
   { name: "Sarah Johnson", avatar: "SJ", role: "Admin" },
@@ -62,8 +66,9 @@ const Projects = ()=> {
   const [showActions, setShowActions] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [statusFilter, setStatusFilter] = useState("All");
-  const [toast, setToast] = useState(null);
   const actionsRef = useRef(null);
+  const dispatch = useDispatch();
+  const { projectsStats } = useSelector(state=>state.organisation);
 
   useEffect(() => {
     const handler = (e) => {
@@ -73,10 +78,23 @@ const Projects = ()=> {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
+  useEffect(()=>{
+    getProjectsStatsData();
+  },[dispatch]);
+
+  const getProjectsStatsData = async()=>{
+    try {
+      const res = await getProjectsStats();
+      dispatch(storeProjectsStats(res?.data));
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
+
+  const totalPercentageOfInProgressProject = Math.round(projectsStats && projectsStats.allProjects>0 ? projectsStats.inProgressProjects/projectsStats.allProjects*100 : 0 );
+
+  //updated code till here
 
   const openCreate = () => {
     setForm(DEFAULT_FORM);
@@ -124,7 +142,6 @@ const Projects = ()=> {
             : p
         )
       );
-      showToast("Project updated");
     } else {
       const newProject = {
         id: Date.now(),
@@ -140,7 +157,6 @@ const Projects = ()=> {
         createdAt: new Date().toISOString().split("T")[0],
       };
       setProjects((prev) => [newProject, ...prev]);
-      showToast("Project created successfully");
     }
     setShowModal(false);
   };
@@ -149,15 +165,9 @@ const Projects = ()=> {
     setProjects((prev) => prev.filter((p) => p.id !== id));
     setDeleteConfirm(null);
     setShowActions(null);
-    showToast("Project deleted");
   };
 
   const filtered = statusFilter === "All" ? projects : projects.filter((p) => p.status === statusFilter);
-
-  const totalCount = projects.length;
-  const inProgressCount = projects.filter((p) => p.status === "In Progress").length;
-  const completedCount = projects.filter((p) => p.status === "Completed").length;
-  const atRiskCount = projects.filter((p) => p.health === "critical" || p.health === "warning").length;
 
   const formatDeadline = (d) => {
     if (!d) return "—";
@@ -166,13 +176,6 @@ const Projects = ()=> {
 
   return (
     <div className="space-y-6">
-      {toast && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span className="text-sm font-medium">{toast}</span>
-        </div>
-      )}
-
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">All Projects</h1>
@@ -188,10 +191,10 @@ const Projects = ()=> {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Projects" value={String(totalCount)} change={`+${projects.filter(p => p.createdAt >= new Date(Date.now() - 30*24*60*60*1000).toISOString().split('T')[0]).length} this month`} icon={<FolderKanban className="w-6 h-6" />} trend="up" />
-        <StatCard title="In Progress" value={String(inProgressCount)} change={`${Math.round(inProgressCount/totalCount*100) || 0}% of total`} icon={<Clock className="w-6 h-6" />} trend="neutral" />
-        <StatCard title="Completed" value={String(completedCount)} change="+3 this week" icon={<CheckCircle2 className="w-6 h-6" />} trend="up" />
-        <StatCard title="At Risk" value={String(atRiskCount)} change={atRiskCount > 0 ? "Needs attention" : "All healthy"} icon={<AlertCircle className="w-6 h-6" />} trend={atRiskCount > 0 ? "down" : "up"} />
+        <StatCard title="Total Projects" value={projectsStats?.allProjects || "0"} change={`+${projectsStats?.projectsCreatedThisMonth || "0"} this month`} icon={<FolderKanban className="w-6 h-6" />} trend="up" />
+        <StatCard title="In Progress" value={projectsStats?.inProgressProjects || "0"} change={`${totalPercentageOfInProgressProject}% of total`} icon={<Clock className="w-6 h-6" />} trend="neutral" />
+        <StatCard title="Completed" value={projectsStats?.completedProjects || "0"} change={`+${projectsStats?.completedThisWeek || "0"} this week`} icon={<CheckCircle2 className="w-6 h-6" />} trend={projectsStats?.completedThisWeek > 0 ? "up" : "neutral"} />
+        <StatCard title="At Risk" value={projectsStats?.atRiskProjects || "0"} change={projectsStats?.atRiskProjects > 0 ? "Needs attention" : "All healthy"} icon={<AlertCircle className="w-6 h-6" />} trend={projectsStats?.atRiskProjects > 0 ? "down" : "up"} />
       </div>
 
       {/* Filter bar */}

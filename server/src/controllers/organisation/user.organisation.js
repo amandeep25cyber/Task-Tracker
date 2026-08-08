@@ -175,40 +175,15 @@ const getProjectsStat = asyncHandler(async(req,res)=>{
     //fetch this week completed projects
     //fetch at risk projects
 
-    const allProjects = await Project.countDocuments({
-        organisation:req?.user?.organisation
-    })
-    
-    //project created this month
+    const orgId = req?.user?.organisation;
     const now = new Date();
-    
+
+    // Month Logic
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    
-    const projectsCreatedThisMonth = await Project.countDocuments({
-        organisation:req?.user?.organisation,
-        createdAt: {
-            $gte: startOfMonth,
-            $lt: startOfNextMonth
-        }
-    });
 
-    //fetch in progress projects count
-    const inProgressProjects = await Project.countDocuments({
-        organisation:req?.user?.organisation,
-        status:"active"
-    })
-
-    //Count completed Projects
-    const completedProjects = await Project.countDocuments({
-        organisation:req?.user?.organisation,
-        status:"completed"
-    })
-
-    //This week completed projects
-
-    const day = now.getDay(); // Sunday = 0
-
+    // Week Logic (Sunday to Saturday)
+    const day = now.getDay();
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - day);
     startOfWeek.setHours(0, 0, 0, 0);
@@ -216,69 +191,54 @@ const getProjectsStat = asyncHandler(async(req,res)=>{
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 7);
 
-    const completedThisWeek = await Project.countDocuments({
-        organisation:req?.user?.organisation,
-        status: "completed",
-        updatedAt: {
-            $gte: startOfWeek,
-            $lt: endOfWeek
-        }
-    });
+    // 🚀 Promise.all for PARALLEL Execution (Super Fast!)
+    const [
+        allProjects,
+        projectsCreatedThisMonth,
+        inProgressProjects, // Pichli baat yaad hai? Agar "Active" chahiye toh status: { $in: ["Planning", "In Progress"] } kar lena
+        completedProjects,
+        completedThisWeek,
+        atRiskProjects
+    ] = await Promise.all([
+        Project.countDocuments({ organisation: orgId }),
+        
+        Project.countDocuments({
+            organisation: orgId,
+            createdAt: { $gte: startOfMonth, $lt: startOfNextMonth }
+        }),
+        
+        Project.countDocuments({
+            organisation: orgId,
+            status: "In Progress" 
+        }),
+        
+        Project.countDocuments({
+            organisation: orgId,
+            status: "Completed"
+        }),
+        
+        Project.countDocuments({
+            organisation: orgId,
+            status: "Completed", // 🐛 BUG FIXED: "completed" se "Completed" kar diya
+            updatedAt: { $gte: startOfWeek, $lt: endOfWeek }
+        }),
+        
+        Project.countDocuments({
+            organisation: orgId,
+            health: { $in: ["Critical", "Warning"] }
+        })
+    ]);
 
-    //fetch the number of projects which is at risk and are going to meet it's deadline
-    const today = new Date();
-
-    const tomorrowStart = new Date(today);
-    tomorrowStart.setDate(today.getDate() + 1);
-    tomorrowStart.setHours(0, 0, 0, 0);
-
-    const tomorrowEnd = new Date(tomorrowStart);
-    tomorrowEnd.setDate(tomorrowStart.getDate() + 1);
-
-    const projects = await Project.find({
-        organisation:req?.user?.organisation,
-        status: "active",
-        deadline: {
-            $gte: tomorrowStart,
-            $lt: tomorrowEnd
-        }
-    });
-
-    let atRiskProjects = 0;
-
-    for (const project of projects) {
-
-        const totalTasks = await Task.countDocuments({
-            project: project._id
-        });
-
-        const completedTasks = await Task.countDocuments({
-            project: project._id,
-            status: "done"
-        });
-
-        if (totalTasks === 0) continue;
-
-        const remainingPercentage =
-            ((totalTasks - completedTasks) / totalTasks) * 100;
-
-        if (remainingPercentage > 50) {
-            atRiskProjects++;
-        }
-    }
-
-    res
-    .status(200)
-    .json(
-        new ApiResponse(200,{
+    res.status(200).json(
+        new ApiResponse(200, {
             allProjects,
             projectsCreatedThisMonth,
             inProgressProjects,
             completedProjects,
-            atRiskProjects,
-            completedThisWeek
-        })
-    )
+            completedThisWeek,
+            atRiskProjects
+        }, "Dashboard stats fetched successfully")
+    );
 })
 
 const getProjects = asyncHandler(async(req,res)=>{
