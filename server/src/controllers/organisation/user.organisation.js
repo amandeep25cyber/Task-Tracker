@@ -524,6 +524,61 @@ const createTask = asyncHandler(async (req, res) => {
     );
 });
 
+const updateTaskStatus = asyncHandler(async (req, res) => {
+    const { taskId } = req.params;
+    const { status } = req.body; 
+    const orgId = req.user.organisation;
+
+    const allowedStatuses = ["todo", "in-progress", "done"];
+    if (!status || !allowedStatuses.includes(status)) {
+        throw new ApiError(400, "Invalid or missing task status");
+    }
+
+    const task = await Task.findById(taskId).populate("project");
+
+    if (!task) {
+        throw new ApiError(404, "Task not found");
+    }
+
+    if (task.project.organisation.toString() !== orgId.toString()) {
+        throw new ApiError(403, "Access denied. Task belongs to another organisation.");
+    }
+
+    task.status = status;
+    await task.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, { taskId: task._id, status: task.status }, "Status updated successfully")
+    );
+});
+
+const deleteTask = asyncHandler(async (req, res) => {
+    const { taskId } = req.params;
+    const orgId = req.user.organisation;
+
+    const task = await Task.findById(taskId).populate("project");
+
+    if (!task) {
+        throw new ApiError(404, "Task not found");
+    }
+
+    if (task.project.organisation.toString() !== orgId.toString()) {
+        throw new ApiError(403, "Access denied. Task belongs to another organisation.");
+    }
+
+    const projectId = task.project._id;
+
+    await task.deleteOne();
+
+    await Project.findByIdAndUpdate(projectId, {
+        $inc: { taskCount: -1 }
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Task deleted successfully and project task count updated")
+    );
+});
+
 export {
     createNewUser,
     getAllUser,
@@ -537,4 +592,6 @@ export {
     updateProject,
     deleteProject,
     createTask,
+    updateTaskStatus,
+    deleteTask,
 }
