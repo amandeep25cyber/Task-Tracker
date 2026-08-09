@@ -6,7 +6,7 @@ import {
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
-import { createProject, getProjects, getProjectsStats, getUsers } from "../../services/organisation.services";
+import { createProject, getProjects, getProjectsStats, getUsers, updateProject } from "../../services/organisation.services";
 import { useDispatch, useSelector } from "react-redux";
 import { storeProjects, storeProjectsStats, storeUsers } from "../../store/features/orgSlice.js";
 
@@ -18,9 +18,9 @@ const statusColors = {
 };
 
 const healthDot = {
-  good: "bg-emerald-500",
-  warning: "bg-amber-500",
-  critical: "bg-red-500",
+  Good: "bg-emerald-500",
+  Warning: "bg-amber-500",
+  Critical: "bg-red-500",
 };
 
 const avatarGradients = [
@@ -118,7 +118,7 @@ const Projects = ()=> {
       description: p.description,
       status: p.status,
       deadline: p.deadline,
-      members: p.team,
+      members: p.team ? p.team.map(member => member._id || member) : [],
       health: p.health,
     });
     setEditingId(p.id);
@@ -136,9 +136,31 @@ const Projects = ()=> {
   };
 
   const saveProject = async () => {
+    if(!editingId){
+      createNewProject();
+    }else{
+      updateExistedProject();
+    }
+  };
+
+  const updateExistedProject = async ()=>{
+    try {
+      const project = await updateProject(form,editingId);
+      getProjectsData();
+      getProjectsStatsData();
+      setForm(DEFAULT_FORM);
+      setShowModal(false);
+      toast.success(project?.message)
+      setEditingId(null);
+    } catch (error) {
+      toast.error(error?.response?.data?.message)
+      console.log(error?.response?.data?.message)
+    }
+  }
+
+  const createNewProject = async()=>{
     try {
       const project = await createProject(form);
-      console.log(project)
       getProjectsData();
       getProjectsStatsData();
       setForm(DEFAULT_FORM);
@@ -148,7 +170,7 @@ const Projects = ()=> {
       toast.error(error?.response?.data?.message)
       console.log(error?.response?.data?.message)
     }
-  };
+  }
 
   let filtered = [];
   if(projects){
@@ -241,7 +263,7 @@ const Projects = ()=> {
                   {showActions === project.id && (
                     <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-20">
                       <Link
-                        to={`/project/${project.id}`}
+                        to={`/admin/project/${project.id}`}
                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                         onClick={() => setShowActions(null)}
                       >

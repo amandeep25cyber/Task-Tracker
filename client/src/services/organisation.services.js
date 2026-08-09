@@ -59,6 +59,15 @@ const createProject = async(data) =>{
     return res?.data;
 }
 
+const updateProject = async(data,id) =>{
+    const res = await axios.put(`${apiUrl}/organisation/project/${id}`,data,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
+
 export {
     getUsers,
     getTeamPerformance,
@@ -67,4 +76,5 @@ export {
     createUser,
     getProjects,
     createProject,
+    updateProject,
 }
