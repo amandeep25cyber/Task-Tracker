@@ -267,13 +267,16 @@ const getProjects = asyncHandler(async(req,res)=>{
             id: project._id,
             name: project.title,
             status: project.status,
+            description:project.description,
             progress,
             team: project.members,
             deadline: project.deadline,
             tasks: {
                 total: totalTasks,
                 completed: completedTasks
-            }
+            },
+            health:project.health,
+            createdAt:project.createdAt?.toISOString().split('T')[0]
         });
     }
 

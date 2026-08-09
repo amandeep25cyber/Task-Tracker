@@ -43,10 +43,19 @@ const createUser = async(data)=>{
     return res?.data;
 }
 
+const getProjects = async() =>{
+    const res = await axios.get(`${apiUrl}/organisation/projects`,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
 export {
     getUsers,
     getTeamPerformance,
     getdashboardStats,
     getProjectsStats,
     createUser,
+    getProjects,
 }

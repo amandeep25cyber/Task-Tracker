@@ -6,9 +6,9 @@ import {
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
-import { getProjectsStats } from "../../services/organisation.services";
+import { getProjects, getProjectsStats } from "../../services/organisation.services";
 import { useDispatch, useSelector } from "react-redux";
-import { storeProjectsStats } from "../../store/features/orgSlice.js";
+import { storeProjects, storeProjectsStats } from "../../store/features/orgSlice.js";
 
 const ALL_MEMBERS = [
   { name: "Sarah Johnson", avatar: "SJ", role: "Admin" },
@@ -17,13 +17,6 @@ const ALL_MEMBERS = [
   { name: "John Smith", avatar: "JS", role: "Developer" },
   { name: "Lisa Wong", avatar: "LW", role: "Developer" },
   { name: "David Miller", avatar: "DM", role: "Developer" },
-];
-
-const initialProjects = [
-  { id: 1, name: "Website Redesign", description: "Complete redesign of the company website with modern UI/UX principles.", status: "In Progress", progress: 65, team: ["Sarah Johnson", "Mike Chen", "Emily Davis"], teamAvatars: ["SJ", "MC", "ED"], deadline: "2026-05-30", tasks: { total: 45, completed: 29 }, health: "good", createdAt: "2026-04-01" },
-  { id: 2, name: "Mobile App Launch", description: "Develop and launch the iOS/Android app for our platform.", status: "In Progress", progress: 40, team: ["John Smith", "Lisa Wong"], teamAvatars: ["JS", "LW"], deadline: "2026-06-15", tasks: { total: 62, completed: 25 }, health: "warning", createdAt: "2026-03-15" },
-  { id: 3, name: "API Integration", description: "Integrate third-party payment and analytics APIs.", status: "Completed", progress: 100, team: ["Mike Chen", "David Miller"], teamAvatars: ["MC", "DM"], deadline: "2026-05-20", tasks: { total: 28, completed: 28 }, health: "good", createdAt: "2026-02-01" },
-  { id: 4, name: "Security Audit", description: "Comprehensive security review of all production systems.", status: "Planning", progress: 15, team: ["Sarah Johnson", "Emily Davis", "John Smith"], teamAvatars: ["SJ", "ED", "JS"], deadline: "2026-07-01", tasks: { total: 35, completed: 5 }, health: "critical", createdAt: "2026-04-20" },
 ];
 
 const statusColors = {
@@ -59,7 +52,7 @@ const DEFAULT_FORM = {
 };
 
 const Projects = ()=> {
-  const [projects, setProjects] = useState(initialProjects);
+  const { projects } = useSelector(state=>state.organisation);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(DEFAULT_FORM);
@@ -69,6 +62,10 @@ const Projects = ()=> {
   const actionsRef = useRef(null);
   const dispatch = useDispatch();
   const { projectsStats } = useSelector(state=>state.organisation);
+
+  if(!projects){
+    return <h1>Loading ...</h1>
+  }
 
   useEffect(() => {
     const handler = (e) => {
@@ -80,12 +77,24 @@ const Projects = ()=> {
 
   useEffect(()=>{
     getProjectsStatsData();
+    getProjectsData();
   },[dispatch]);
 
   const getProjectsStatsData = async()=>{
     try {
       const res = await getProjectsStats();
       dispatch(storeProjectsStats(res?.data));
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
+
+  const getProjectsData = async()=>{
+    try {
+      const res = await getProjects();
+      console.log(res?.data);
+      dispatch(storeProjects(res?.data));
     } catch (error) {
       toast.error(error?.response?.data?.message);
       console.log(error?.response?.data?.message);
@@ -127,47 +136,14 @@ const Projects = ()=> {
   };
 
   const saveProject = () => {
-    if (!form.name.trim()) return;
-    const avatars = form.selectedMembers.map(
-      (name) => ALL_MEMBERS.find((m) => m.name === name)?.avatar ?? name.substring(0, 2).toUpperCase()
-    );
-    const total = parseInt(form.totalTasks) || 0;
-    const progress = form.status === "Completed" ? 100 : form.status === "Planning" ? 0 : Math.round(Math.random() * 60 + 20);
-
-    if (editingId !== null) {
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === editingId
-            ? { ...p, name: form.name, description: form.description, status: form.status, deadline: form.deadline, team: form.selectedMembers, teamAvatars: avatars, health: form.health, tasks: { ...p.tasks, total } }
-            : p
-        )
-      );
-    } else {
-      const newProject = {
-        id: Date.now(),
-        name: form.name,
-        description: form.description,
-        status: form.status,
-        progress,
-        team: form.selectedMembers,
-        teamAvatars: avatars,
-        deadline: form.deadline,
-        tasks: { total, completed: 0 },
-        health: form.health,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setProjects((prev) => [newProject, ...prev]);
-    }
-    setShowModal(false);
+    
   };
 
-  const deleteProject = (id) => {
-    setProjects((prev) => prev.filter((p) => p.id !== id));
-    setDeleteConfirm(null);
-    setShowActions(null);
-  };
-
-  const filtered = statusFilter === "All" ? projects : projects.filter((p) => p.status === statusFilter);
+  let filtered = [];
+  if(projects){
+    filtered = statusFilter === "All" ? projects : projects.filter((p) => p.status === statusFilter);
+  }
+   
 
   const formatDeadline = (d) => {
     if (!d) return "—";
@@ -221,13 +197,13 @@ const Projects = ()=> {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filtered.map((project) => (
-          <Card key={project.id}>
+        {filtered.map((project,index) => (
+          <Card key={project?._id || index}>
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <Link to={`/admin/project/${project.id}`} className="font-semibold text-gray-900 hover:text-blue-600 transition-colors truncate">
+                    <Link to={`/admin/project/${project._id}`} className="font-semibold text-gray-900 hover:text-blue-600 transition-colors truncate">
                       {project.name}
                     </Link>
                   </div>
@@ -244,17 +220,17 @@ const Projects = ()=> {
                     </div>
                   </div>
                 </div>
-                <div className="relative shrink-0 ml-3" ref={showActions === project.id ? actionsRef : undefined}>
+                <div className="relative shrink-0 ml-3" ref={showActions === project._id ? actionsRef : undefined}>
                   <button
-                    onClick={() => setShowActions(showActions === project.id ? null : project.id)}
+                    onClick={() => setShowActions(showActions === project._id ? null : project._id)}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <MoreVertical className="w-4 h-4 text-gray-500" />
                   </button>
-                  {showActions === project.id && (
+                  {showActions === project._id && (
                     <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-20">
                       <Link
-                        to={`/project/${project.id}`}
+                        to={`/project/${project._id}`}
                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                         onClick={() => setShowActions(null)}
                       >
@@ -268,7 +244,7 @@ const Projects = ()=> {
                       </button>
                       <div className="my-1 border-t border-gray-100" />
                       <button
-                        onClick={() => { setDeleteConfirm(project.id); setShowActions(null); }}
+                        onClick={() => { setDeleteConfirm(project._id); setShowActions(null); }}
                         className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                       >
                         <Trash2 className="w-4 h-4" /> Delete
@@ -294,23 +270,33 @@ const Projects = ()=> {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="flex -space-x-2">
-                    {project.teamAvatars.slice(0, 4).map((av, idx) => (
-                      <div
-                        key={idx}
-                        className={`w-7 h-7 bg-linear-to-br ${avatarGradients[idx % avatarGradients.length]} rounded-full flex items-center justify-center border-2 border-white`}
-                        title={project.team[idx]}
-                      >
-                        <span className="text-white text-[9px] font-bold">{av}</span>
-                      </div>
-                    ))}
-                    {project.team.length > 4 && (
-                      <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center border-2 border-white">
-                        <span className="text-gray-600 text-[9px] font-bold">+{project.team.length - 4}</span>
+                    {(project.team || []).slice(0, 4).map((member, idx) => {
+                      // Sirf pehla letter nikalne ke liye substring ki jagah charAt(0)
+                      const firstLetter = member?.name ? member.name.charAt(0).toUpperCase() : "?";
+                      return (
+                        <div
+                          key={member._id || idx}
+                          className={`w-7 h-7 bg-linear-to-br ${avatarGradients[idx % avatarGradients.length]} rounded-full flex items-center justify-center border-2 border-white`}
+                          title={member?.name || "Member"}
+                        >
+                          {member?.avatar ? (
+                            <img src={member.avatar} alt="avatar" className="w-full h-full rounded-full object-cover" />
+                          ) : (
+                            // Font size text-[9px] se badha kar text-xs kar diya
+                            <span className="text-white text-xs font-bold">{firstLetter}</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {(project.team?.length || 0) > 4 && (
+                      <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center border-2 border-white z-10">
+                        {/* Yahan bhi font size thoda clear kiya hai */}
+                        <span className="text-gray-600 text-[10px] font-bold">+{project.team.length - 4}</span>
                       </div>
                     )}
                   </div>
                   <span className="text-sm text-gray-500">
-                    <span className="font-semibold text-gray-900">{project.tasks.completed}</span>/{project.tasks.total} tasks
+                    <span className="font-semibold text-gray-900">0</span>/{project.taskCount || 0} tasks
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -329,7 +315,7 @@ const Projects = ()=> {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Project?</h3>
             <p className="text-sm text-gray-500 mb-6">
-              "{projects.find((p) => p.id === deleteConfirm)?.name}" will be permanently deleted. This cannot be undone.
+              "{projects?.find((p) => p.id === deleteConfirm)?.name}" will be permanently deleted. This cannot be undone.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
