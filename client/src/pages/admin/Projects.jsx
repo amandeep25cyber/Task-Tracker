@@ -6,18 +6,9 @@ import {
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
-import { getProjects, getProjectsStats } from "../../services/organisation.services";
+import { createProject, getProjects, getProjectsStats, getUsers } from "../../services/organisation.services";
 import { useDispatch, useSelector } from "react-redux";
-import { storeProjects, storeProjectsStats } from "../../store/features/orgSlice.js";
-
-const ALL_MEMBERS = [
-  { name: "Sarah Johnson", avatar: "SJ", role: "Admin" },
-  { name: "Mike Chen", avatar: "MC", role: "Project Manager" },
-  { name: "Emily Davis", avatar: "ED", role: "Designer" },
-  { name: "John Smith", avatar: "JS", role: "Developer" },
-  { name: "Lisa Wong", avatar: "LW", role: "Developer" },
-  { name: "David Miller", avatar: "DM", role: "Developer" },
-];
+import { storeProjects, storeProjectsStats, storeUsers } from "../../store/features/orgSlice.js";
 
 const statusColors = {
   "Completed": "bg-emerald-100 text-emerald-700",
@@ -42,13 +33,12 @@ const avatarGradients = [
 ];
 
 const DEFAULT_FORM = {
-  name: "",
+  title: "",
   description: "",
   status: "Planning",
   deadline: "",
-  totalTasks: "10",
-  selectedMembers: [],
-  health: "good",
+  members: [],
+  health: "Good",
 };
 
 const Projects = ()=> {
@@ -62,6 +52,7 @@ const Projects = ()=> {
   const actionsRef = useRef(null);
   const dispatch = useDispatch();
   const { projectsStats } = useSelector(state=>state.organisation);
+  const ALL_MEMBERS = useSelector(state=>state.organisation.users)
 
   if(!projects){
     return <h1>Loading ...</h1>
@@ -78,6 +69,7 @@ const Projects = ()=> {
   useEffect(()=>{
     getProjectsStatsData();
     getProjectsData();
+    fetchUser();
   },[dispatch]);
 
   const getProjectsStatsData = async()=>{
@@ -93,11 +85,20 @@ const Projects = ()=> {
   const getProjectsData = async()=>{
     try {
       const res = await getProjects();
-      console.log(res?.data);
       dispatch(storeProjects(res?.data));
     } catch (error) {
       toast.error(error?.response?.data?.message);
       console.log(error?.response?.data?.message);
+    }
+  }
+
+  const fetchUser = async ()=>{
+    try {
+      const users = await getUsers();
+      dispatch(storeUsers(users?.data));
+
+    } catch (error) {
+      console.log(error?.response?.data?.message)
     }
   }
 
@@ -113,12 +114,11 @@ const Projects = ()=> {
 
   const openEdit = (p) => {
     setForm({
-      name: p.name,
+      title: p.name,
       description: p.description,
       status: p.status,
       deadline: p.deadline,
-      totalTasks: String(p.tasks.total),
-      selectedMembers: p.team,
+      members: p.team,
       health: p.health,
     });
     setEditingId(p.id);
@@ -126,17 +126,28 @@ const Projects = ()=> {
     setShowActions(null);
   };
 
-  const toggleMember = (name) => {
+  const toggleMember = (_id) => {
     setForm((f) => ({
       ...f,
-      selectedMembers: f.selectedMembers.includes(name)
-        ? f.selectedMembers.filter((m) => m !== name)
-        : [...f.selectedMembers, name],
+      members: f.members.includes(_id)
+        ? f.members.filter((m) => m !== _id)
+        : [...f.members, _id],
     }));
   };
 
-  const saveProject = () => {
-    
+  const saveProject = async () => {
+    try {
+      const project = await createProject(form);
+      console.log(project)
+      getProjectsData();
+      getProjectsStatsData();
+      setForm(DEFAULT_FORM);
+      setShowModal(false);
+      toast.success(project?.message)
+    } catch (error) {
+      toast.error(error?.response?.data?.message)
+      console.log(error?.response?.data?.message)
+    }
   };
 
   let filtered = [];
@@ -197,13 +208,13 @@ const Projects = ()=> {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filtered.map((project,index) => (
-          <Card key={project?._id || index}>
+        {filtered.map((project,index) => {
+          return <Card key={project?.id || index}>
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5">
-                    <Link to={`/admin/project/${project._id}`} className="font-semibold text-gray-900 hover:text-blue-600 transition-colors truncate">
+                    <Link to={`/admin/project/${project.id}`} className="font-semibold text-gray-900 hover:text-blue-600 transition-colors truncate">
                       {project.name}
                     </Link>
                   </div>
@@ -220,17 +231,17 @@ const Projects = ()=> {
                     </div>
                   </div>
                 </div>
-                <div className="relative shrink-0 ml-3" ref={showActions === project._id ? actionsRef : undefined}>
+                <div className="relative shrink-0 ml-3" ref={showActions === project.id ? actionsRef : undefined}>
                   <button
-                    onClick={() => setShowActions(showActions === project._id ? null : project._id)}
+                    onClick={() => setShowActions(showActions === project.id ? null : project.id)}
                     className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                   >
                     <MoreVertical className="w-4 h-4 text-gray-500" />
                   </button>
-                  {showActions === project._id && (
+                  {showActions === project.id && (
                     <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-20">
                       <Link
-                        to={`/project/${project._id}`}
+                        to={`/project/${project.id}`}
                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                         onClick={() => setShowActions(null)}
                       >
@@ -244,7 +255,7 @@ const Projects = ()=> {
                       </button>
                       <div className="my-1 border-t border-gray-100" />
                       <button
-                        onClick={() => { setDeleteConfirm(project._id); setShowActions(null); }}
+                        onClick={() => { setDeleteConfirm(project.id); setShowActions(null); }}
                         className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                       >
                         <Trash2 className="w-4 h-4" /> Delete
@@ -261,7 +272,7 @@ const Projects = ()=> {
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2">
                   <div
-                    className={`h-2 rounded-full transition-all ${project.health === "critical" ? "bg-red-500" : project.health === "warning" ? "bg-amber-500" : "bg-blue-500"}`}
+                    className={`h-2 rounded-full transition-all ${project.health === "Critical" ? "bg-red-500" : project.health === "Warning" ? "bg-amber-500" : "bg-blue-500"}`}
                     style={{ width: `${project.progress}%` }}
                   />
                 </div>
@@ -306,7 +317,9 @@ const Projects = ()=> {
               </div>
             </div>
           </Card>
-        ))}
+        }
+          
+        )}
       </div>
 
       {/* Delete confirm */}
@@ -348,8 +361,8 @@ const Projects = ()=> {
                 <label className="text-sm font-semibold text-gray-700 block mb-1.5">Project Name *</label>
                 <input
                   autoFocus
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="e.g. Mobile App v2"
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
@@ -389,9 +402,9 @@ const Projects = ()=> {
                     onChange={(e) => setForm({ ...form, health: e.target.value })}
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                   >
-                    <option value="good">Good</option>
-                    <option value="warning">Warning</option>
-                    <option value="critical">Critical</option>
+                    <option>Good</option>
+                    <option>Warning</option>
+                    <option>Critical</option>
                   </select>
                 </div>
               </div>
@@ -409,18 +422,6 @@ const Projects = ()=> {
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" />Total Tasks
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.totalTasks}
-                    onChange={(e) => setForm({ ...form, totalTasks: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
-                </div>
               </div>
 
               {/* Team members */}
@@ -428,17 +429,17 @@ const Projects = ()=> {
                 <label className="text-sm font-semibold text-gray-700 block mb-2">
                   <Users className="w-3.5 h-3.5 inline mr-1" />
                   Team Members
-                  {form.selectedMembers.length > 0 && (
-                    <span className="ml-2 text-xs font-normal text-blue-600">{form.selectedMembers.length} selected</span>
+                  {form.members.length > 0 && (
+                    <span className="ml-2 text-xs font-normal text-blue-600">{form.members.length} selected</span>
                   )}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {ALL_MEMBERS.map((member) => {
-                    const selected = form.selectedMembers.includes(member.name);
+                  {(ALL_MEMBERS || []).map((member) => {
+                    const selected = form.members.includes(member._id);
                     return (
                       <button
-                        key={member.name}
-                        onClick={() => toggleMember(member.name)}
+                        key={member._id}
+                        onClick={() => toggleMember(member._id)}
                         className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all ${
                           selected
                             ? "border-blue-500 bg-blue-50 text-blue-700"
@@ -471,7 +472,7 @@ const Projects = ()=> {
               </button>
               <button
                 onClick={saveProject}
-                disabled={!form.name.trim()}
+                disabled={!form.title.trim()}
                 className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-40"
               >
                 {editingId !== null ? "Save Changes" : "Create Project"}
