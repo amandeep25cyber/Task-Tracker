@@ -67,6 +67,14 @@ const updateProject = async(data,id) =>{
     return res?.data;
 }
 
+const deleteProject = async(projectId) =>{
+    const res = await axios.delete(`${apiUrl}/organisation/project/${projectId}`,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
 
 export {
     getUsers,
@@ -77,4 +85,5 @@ export {
     getProjects,
     createProject,
     updateProject,
+    deleteProject,
 }

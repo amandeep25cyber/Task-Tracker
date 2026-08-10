@@ -6,9 +6,9 @@ import {
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
-import { createProject, getProjects, getProjectsStats, getUsers, updateProject } from "../../services/organisation.services";
+import { createProject, getProjects, getProjectsStats, getUsers, updateProject,deleteProject } from "../../services/organisation.services";
 import { useDispatch, useSelector } from "react-redux";
-import { storeProjects, storeProjectsStats, storeUsers } from "../../store/features/orgSlice.js";
+import { removeProject, storeProjects, storeProjectsStats, storeUsers } from "../../store/features/orgSlice.js";
 
 const statusColors = {
   "Completed": "bg-emerald-100 text-emerald-700",
@@ -104,7 +104,18 @@ const Projects = ()=> {
 
   const totalPercentageOfInProgressProject = Math.round(projectsStats && projectsStats.allProjects>0 ? projectsStats.inProgressProjects/projectsStats.allProjects*100 : 0 );
 
-  //updated code till here
+  const deleteProjectHandler = async (projectId) =>{
+    try {
+      const res = await deleteProject(projectId);
+      dispatch(removeProject(projectId));
+      getProjectsStatsData();
+      setDeleteConfirm(null);
+      toast.success(res?.message);
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message)
+    }
+  }
 
   const openCreate = () => {
     setForm(DEFAULT_FORM);
@@ -356,7 +367,7 @@ const Projects = ()=> {
               <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
                 Cancel
               </button>
-              <button onClick={() => deleteProject(deleteConfirm)} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700">
+              <button onClick={() => deleteProjectHandler(deleteConfirm)} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700">
                 Delete
               </button>
             </div>

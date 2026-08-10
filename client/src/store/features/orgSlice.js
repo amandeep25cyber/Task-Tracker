@@ -42,10 +42,14 @@ const orgSlice = createSlice({
         },
         storeProjects:(state,action)=>{
             state.projects = action.payload;
+        },
+        removeProject:(state,action)=>{
+            const id = action.payload;
+            state.projects = state.projects.filter(project=>project.id!==id);
         }
 
     }
 })
 
-export const { storeOrganisation, deleteOrganisation, storeUsers, storeDashboardStats, deleteDashboardStats, setTeamPerformance,deleteTeamPerformance, storeProjectsStats, addUsers, storeProjects } = orgSlice.actions;
+export const { storeOrganisation, deleteOrganisation, storeUsers, storeDashboardStats, deleteDashboardStats, setTeamPerformance,deleteTeamPerformance, storeProjectsStats, addUsers, storeProjects, removeProject } = orgSlice.actions;
 export default orgSlice.reducer;
