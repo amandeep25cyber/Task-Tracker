@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { KanbanBoard } from "./ui/KanbanBoard";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { getSingleProject, taskStatusUpdate } from "../services/organisation.services";
+import { createNewTask, getSingleProject, taskStatusUpdate } from "../services/organisation.services";
 
 const tabs = [
   { id: "overview", label: "Overview", icon: CheckSquare },
@@ -14,42 +14,11 @@ const tabs = [
   { id: "files", label: "Files", icon: FileText },
 ];
 
-// const projectData = {
-//   name: "Website Redesign",
-//   description: "Complete redesign of the company website with modern UI/UX principles",
-//   status: "In Progress",
-//   progress: 65,//
-//   startDate: "May 1, 2026",
-//   endDate: "Jul 30, 2026",
-//   team: [
-//     { name: "Emily Davis", role: "Lead Designer", avatar: "ED" },
-//     { name: "John Smith", role: "Developer", avatar: "JS" },
-//     { name: "Lisa Wong", role: "Developer", avatar: "LW" },
-//   ],
-//   stats: { total: 45, completed: 29, inProgress: 10, todo: 6 },
-// };
-
 const recentActivity = [
   { user: "Emily Davis", action: "completed task", task: "Homepage wireframe", time: "2 hours ago" },
   { user: "John Smith", action: "updated", task: "Navigation component", time: "5 hours ago" },
   { user: "Lisa Wong", action: "commented on", task: "Color scheme", time: "1 day ago" },
 ];
-
-// const initialTasks = {
-//   todo: [
-//     { id: "t1", title: "Footer redesign", assignee: "Emily Davis", priority: "medium", tags: ["Design"] },
-//     { id: "t2", title: "Mobile responsive fixes", assignee: "John Smith", priority: "high", tags: ["Frontend"] },
-//   ],
-//   inProgress: [
-//     { id: "t3", title: "Homepage hero section", description: "Build the animated hero with CTA", assignee: "Emily Davis", priority: "high", tags: ["Frontend", "Design"] },
-//     { id: "t4", title: "Navigation refactor", assignee: "Lisa Wong", priority: "medium", tags: ["Frontend"] },
-//   ],
-//   done: [
-//     { id: "t5", title: "Color system tokens", assignee: "Emily Davis", priority: "low", tags: ["Design"] },
-//     { id: "t6", title: "Typography scale", assignee: "John Smith", priority: "low", tags: ["Design"] },
-//   ],
-// };
-
 
 const seedChat = [
   { id: 1, user: "Emily Davis", avatar: "ED", text: "Hey team, I've pushed the updated wireframes to Figma.", time: "9:15 AM", isOwn: false },
@@ -81,12 +50,23 @@ const DEFAULT_PROJECT = {
   stats: { total: 0, completed: 0, inProgress: 0, todo: 0 },
 }
 
-
+const DEFAULT_TASK = {
+  title:"",
+  description:"",
+  priority:"low",
+  status:"todo",
+  assignedTo:"",
+  deadline:"",
+  project:"",
+  tags:[],
+}
 
 const ProjectDetail = ({ role }) => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [projectData,setProjectData] = useState(DEFAULT_PROJECT);
+  const [showNewTask,setShowNewTask] = useState(false);
+  const [newTask,setNewTask] = useState(DEFAULT_TASK);
   const basePath = `/${role}`;
 
   useEffect(()=>{
@@ -98,6 +78,7 @@ const ProjectDetail = ({ role }) => {
       const projectData = await getSingleProject(id);
       const pData = projectData?.data?.project;
       const tasksData = projectData?.data?.tasks;
+      setNewTask((prev)=>({...prev,project:pData._id}))
       
       setProjectData({
         name: pData.title,
@@ -145,6 +126,17 @@ const ProjectDetail = ({ role }) => {
       const response = await taskStatusUpdate(status,id);
       getProjectData();
       console.log(response);
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
+
+  const addTask = async() =>{
+    try {
+      const taskCreated = await createNewTask(newTask);
+      getProjectData();
+      setShowNewTask(false);
     } catch (error) {
       toast.error(error?.response?.data?.message);
       console.log(error?.response?.data?.message);
@@ -295,7 +287,7 @@ const ProjectDetail = ({ role }) => {
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-gray-900">Project Tasks</h3>
                 {(role === "admin" || role === "manager") && (
-                  <button className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <button onClick={()=>setShowNewTask(true)} className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
                     <Plus className="w-4 h-4" /> Add Task
                   </button>
                 )}
@@ -396,6 +388,116 @@ const ProjectDetail = ({ role }) => {
           )}
         </div>
       </Card>
+
+      {/* Adding Task Form */}
+      {showNewTask && (
+              <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-lg font-semibold text-gray-900">Create New Task</h3>
+                    <button onClick={() => setShowNewTask(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                      <X className="w-5 h-5 text-gray-500" />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1.5">Title *</label>
+                      <input
+                        autoFocus
+                        value={newTask.title}
+                        onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                        placeholder="Task title"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1.5">Description</label>
+                      <textarea
+                        value={newTask.description}
+                        onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                        placeholder="Optional description..."
+                        rows={2}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-1.5">Priority</label>
+                        <select
+                          value={newTask.priority}
+                          onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                        >
+                          <option>low</option>
+                          <option>medium</option>
+                          <option>high</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-1.5">Column</label>
+                        <select
+                          value={newTask.status}
+                          onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                        >
+                          <option value="todo">To Do</option>
+                          <option value="in-progress">In Progress</option>
+                          <option value="done">Done</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1.5">Deadline</label>
+                      <input
+                        value={newTask.deadline}
+                        onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
+                        placeholder=""
+                        type="date"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                      <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1.5">Assignee</label>
+                      <select
+                        value={newTask.assignedTo}
+                        onChange={(e) => setNewTask({ ...newTask, assignedTo: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                      >
+                        <option value="">Unassigned</option>
+                        {(projectData.team || []).map((member) => <option key={member._id} value={member._id}>{member.name}</option>)}
+                      </select>
+                    </div>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 block mb-1.5">Tags <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+                      <input
+                        value={newTask.tags}
+                        onChange={(e) => setNewTask({ ...newTask, tags: e.target.value })}
+                        placeholder="Frontend, API, Design"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => setShowNewTask(false)}
+                      className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={addTask}
+                      disabled={!newTask.title.trim()}
+                      className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-40"
+                    >
+                      Create Task
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
     </div>
   );
 }

@@ -91,6 +91,14 @@ const taskStatusUpdate = async(status,id)=>{
     return res?.data;
 }
 
+const createNewTask = async(data) =>{
+    const res = await axios.post(`${apiUrl}/organisation/task`,data,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
 export {
     getUsers,
     getTeamPerformance,
@@ -103,4 +111,5 @@ export {
     deleteProject,
     getSingleProject,
     taskStatusUpdate,
+    createNewTask,
 }
