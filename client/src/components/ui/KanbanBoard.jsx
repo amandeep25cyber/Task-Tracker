@@ -15,14 +15,13 @@ function KanbanCard({ task, onDragStart }) {
     "from-teal-500 to-teal-600",
     "from-orange-500 to-orange-600",
   ];
-  const colorIdx = task.assignee ? task.assignee.charCodeAt(0) % avatarColors.length : 0;
-
+  const colorIdx = task.assignedTo?.name ? task.assignedTo?.name?.charCodeAt(0) % avatarColors.length : 0;
   return (
     <div
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
-        onDragStart(task.id, "todo");
+        onDragStart(task._id, "todo");
       }}
       className="bg-white p-4 rounded-xl border border-gray-200 hover:shadow-md hover:border-blue-200 transition-all cursor-grab active:cursor-grabbing select-none"
     >
@@ -43,9 +42,9 @@ function KanbanCard({ task, onDragStart }) {
             </span>
           ))}
         </div>
-        {task.assignee && (
+        {task.assignedTo?.name && (
           <div className={`w-7 h-7 bg-linear-to-br ${avatarColors[colorIdx]} rounded-full flex items-center justify-center shrink-0`}>
-            <span className="text-white text-[10px] font-semibold">{task.assignee.substring(0, 2).toUpperCase()}</span>
+            <span className="text-white text-[10px] font-semibold">{task.assignedTo?.name?.substring(0, 2).toUpperCase()}</span>
           </div>
         )}
       </div>
@@ -66,7 +65,7 @@ function KanbanColumn({ id, title, color, bgColor, tasks, isOver, onDragOver, on
             <div className={`w-2.5 h-2.5 rounded-full ${color}`} />
             <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
             <span className={`px-2 py-0.5 ${bgColor} text-gray-600 rounded-md text-xs font-semibold`}>
-              {tasks.length}
+              {tasks?.length}
             </span>
           </div>
           {onAddTask && (
@@ -79,8 +78,8 @@ function KanbanColumn({ id, title, color, bgColor, tasks, isOver, onDragOver, on
           )}
         </div>
         <div className="space-y-3 min-h-16">
-          {tasks.map((task) => (
-            <KanbanCard key={task.id} task={task} onDragStart={onDragStart} />
+          {(tasks || []).map((task) => (
+            <KanbanCard key={task._id} task={task} onDragStart={onDragStart} />
           ))}
           {isOver && tasks.length === 0 && (
             <div className="h-16 rounded-xl border-2 border-dashed border-blue-300 flex items-center justify-center">
@@ -101,8 +100,8 @@ export function KanbanBoard({ todoTasks, inProgressTasks, doneTasks, onTaskMove,
   const handleDragStart = (taskId, _fromColumn) => {
     // Determine actual column from task id
     const fromCol =
-      todoTasks.find((t) => t.id === taskId) ? "todo" :
-      inProgressTasks.find((t) => t.id === taskId) ? "inProgress" : "done";
+      todoTasks.find((t) => t._id === taskId) ? "todo" :
+      inProgressTasks.find((t) => t._id === taskId) ? "inProgress" : "done";
     dragging.current = { taskId, fromColumn: fromCol };
   };
 

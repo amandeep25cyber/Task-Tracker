@@ -75,6 +75,21 @@ const deleteProject = async(projectId) =>{
     return res?.data;
 }
 
+const getSingleProject = async(id) =>{
+    const res = await axios.get(`${apiUrl}/organisation/project/${id}`,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
+const taskStatusUpdate = async(status,id)=>{
+    const res = await axios.put(`${apiUrl}/organisation/task/${id}/status`,{status},{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
 
 export {
     getUsers,
@@ -86,4 +101,6 @@ export {
     createProject,
     updateProject,
     deleteProject,
+    getSingleProject,
+    taskStatusUpdate,
 }

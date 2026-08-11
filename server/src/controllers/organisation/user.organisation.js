@@ -352,7 +352,7 @@ const getSingleProject = asyncHandler(async (req, res) => {
     const project = await Project.findOne({ 
         _id: projectId, 
         organisation: orgId 
-    }).populate("members", "name email avatar")
+    }).populate("members", "name email avatar jobRole")
       .populate("createdBy", "name avatar");
 
     if (!project) {

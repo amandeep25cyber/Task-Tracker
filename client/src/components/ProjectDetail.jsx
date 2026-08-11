@@ -1,9 +1,11 @@
 import { Card } from "./ui/Card";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Calendar, MessageSquare, FileText, CheckSquare, Settings, Send, Download, Share2, Plus, X } from "lucide-react";
-import { Link } from "react-router";
 import { useState, useRef, useEffect } from "react";
 import { KanbanBoard } from "./ui/KanbanBoard";
+import { useSelector } from "react-redux";
+import { toast } from "react-toastify";
+import { getSingleProject, taskStatusUpdate } from "../services/organisation.services";
 
 const tabs = [
   { id: "overview", label: "Overview", icon: CheckSquare },
@@ -12,20 +14,20 @@ const tabs = [
   { id: "files", label: "Files", icon: FileText },
 ];
 
-const projectData = {
-  name: "Website Redesign",
-  description: "Complete redesign of the company website with modern UI/UX principles",
-  status: "In Progress",
-  progress: 65,
-  startDate: "May 1, 2026",
-  endDate: "Jul 30, 2026",
-  team: [
-    { name: "Emily Davis", role: "Lead Designer", avatar: "ED" },
-    { name: "John Smith", role: "Developer", avatar: "JS" },
-    { name: "Lisa Wong", role: "Developer", avatar: "LW" },
-  ],
-  stats: { total: 45, completed: 29, inProgress: 10, todo: 6 },
-};
+// const projectData = {
+//   name: "Website Redesign",
+//   description: "Complete redesign of the company website with modern UI/UX principles",
+//   status: "In Progress",
+//   progress: 65,//
+//   startDate: "May 1, 2026",
+//   endDate: "Jul 30, 2026",
+//   team: [
+//     { name: "Emily Davis", role: "Lead Designer", avatar: "ED" },
+//     { name: "John Smith", role: "Developer", avatar: "JS" },
+//     { name: "Lisa Wong", role: "Developer", avatar: "LW" },
+//   ],
+//   stats: { total: 45, completed: 29, inProgress: 10, todo: 6 },
+// };
 
 const recentActivity = [
   { user: "Emily Davis", action: "completed task", task: "Homepage wireframe", time: "2 hours ago" },
@@ -33,20 +35,20 @@ const recentActivity = [
   { user: "Lisa Wong", action: "commented on", task: "Color scheme", time: "1 day ago" },
 ];
 
-const initialTasks = {
-  todo: [
-    { id: "t1", title: "Footer redesign", assignee: "Emily Davis", priority: "medium", tags: ["Design"] },
-    { id: "t2", title: "Mobile responsive fixes", assignee: "John Smith", priority: "high", tags: ["Frontend"] },
-  ],
-  inProgress: [
-    { id: "t3", title: "Homepage hero section", description: "Build the animated hero with CTA", assignee: "Emily Davis", priority: "high", tags: ["Frontend", "Design"] },
-    { id: "t4", title: "Navigation refactor", assignee: "Lisa Wong", priority: "medium", tags: ["Frontend"] },
-  ],
-  done: [
-    { id: "t5", title: "Color system tokens", assignee: "Emily Davis", priority: "low", tags: ["Design"] },
-    { id: "t6", title: "Typography scale", assignee: "John Smith", priority: "low", tags: ["Design"] },
-  ],
-};
+// const initialTasks = {
+//   todo: [
+//     { id: "t1", title: "Footer redesign", assignee: "Emily Davis", priority: "medium", tags: ["Design"] },
+//     { id: "t2", title: "Mobile responsive fixes", assignee: "John Smith", priority: "high", tags: ["Frontend"] },
+//   ],
+//   inProgress: [
+//     { id: "t3", title: "Homepage hero section", description: "Build the animated hero with CTA", assignee: "Emily Davis", priority: "high", tags: ["Frontend", "Design"] },
+//     { id: "t4", title: "Navigation refactor", assignee: "Lisa Wong", priority: "medium", tags: ["Frontend"] },
+//   ],
+//   done: [
+//     { id: "t5", title: "Color system tokens", assignee: "Emily Davis", priority: "low", tags: ["Design"] },
+//     { id: "t6", title: "Typography scale", assignee: "John Smith", priority: "low", tags: ["Design"] },
+//   ],
+// };
 
 
 const seedChat = [
@@ -66,26 +68,88 @@ function now() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+const DEFAULT_PROJECT = {
+  name: "",
+  description: "",
+  status: "In Progress",
+  progress: 0,
+  startDate: "-",
+  endDate: "-",
+  team: [
+    { name: "", role: "", avatar: "" }
+  ],
+  stats: { total: 0, completed: 0, inProgress: 0, todo: 0 },
+}
+
+
+
 const ProjectDetail = ({ role }) => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
+  const [projectData,setProjectData] = useState(DEFAULT_PROJECT);
   const basePath = `/${role}`;
 
+  useEffect(()=>{
+    getProjectData();
+  },[])
+
+  const getProjectData = async () =>{
+    try {
+      const projectData = await getSingleProject(id);
+      const pData = projectData?.data?.project;
+      const tasksData = projectData?.data?.tasks;
+      
+      setProjectData({
+        name: pData.title,
+        description: pData.description,
+        status: pData.status,
+        progress: pData.taskCount === 0 ? 0 : Math.round(tasksData.done.length/pData.taskCount *100) ,
+        startDate: pData.createdAt,
+        endDate: pData.deadline || "-",
+        team: pData.members,
+        stats: { total: pData.taskCount, completed: tasksData.done.length, inProgress: tasksData.inProgress.length, todo: tasksData.todo.length },
+      })
+
+      setTasks(tasksData);
+
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
+
   // Tasks state
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState({});
   const handleTaskMove = (taskId, toColumn) => {
     const fromCol = (["todo", "inProgress", "done"]).find((c) =>
-      tasks[c].some((t) => t.id === taskId)
+      tasks[c].some((t) => t._id === taskId)
     );
     if (!fromCol || fromCol === toColumn) return;
-    const task = tasks[fromCol].find((t) => t.id === taskId);
+    const task = tasks[fromCol].find((t) => t._id === taskId);
     if(!task) return;
     setTasks((prev) => ({
       ...prev,
-      [fromCol]: prev[fromCol].filter((t) => t.id !== taskId),
+      [fromCol]: prev[fromCol].filter((t) => t._id !== taskId),
       [toColumn]: [...prev[toColumn], task],
     }));
+    let status = toColumn;
+    if(toColumn==="inProgress"){
+      status = "in-progress";
+    }
+    updateStatusOfTask(status,task._id);
+    
   };
+
+  const updateStatusOfTask = async(status,id)=>{
+    try {
+      const response = await taskStatusUpdate(status,id);
+      getProjectData();
+      console.log(response);
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
 
   // Chat state
   const [chatMessages, setChatMessages] = useState(seedChat);
@@ -103,6 +167,11 @@ const ProjectDetail = ({ role }) => {
       { id: Date.now(), user: "You", avatar: "ME", text, time: now(), isOwn: true },
     ]);
     setChatDraft("");
+  };
+
+  const formatDate = (d) => {
+    if (!d) return "—";
+    try { return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); } catch { return d; }
   };
 
   return (
@@ -129,8 +198,8 @@ const ProjectDetail = ({ role }) => {
         {[
           { label: "Status", value: <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold">{projectData.status}</span> },
           { label: "Progress", value: <><p className="text-2xl font-bold text-gray-900">{projectData.progress}%</p><div className="mt-1.5 h-1.5 bg-gray-100 rounded-full overflow-hidden"><div className="h-full bg-blue-500 rounded-full" style={{ width: `${projectData.progress}%` }} /></div></> },
-          { label: "Start Date", value: <p className="font-semibold text-gray-900 text-sm">{projectData.startDate}</p> },
-          { label: "Due Date", value: <p className="font-semibold text-gray-900 text-sm">{projectData.endDate}</p> },
+          { label: "Start Date", value: <p className="font-semibold text-gray-900 text-sm">{formatDate(projectData.startDate)}</p> },
+          { label: "Due Date", value: <p className="font-semibold text-gray-900 text-sm">{formatDate(projectData.endDate)}</p> },
         ].map((item) => (
           <Card key={item.label}>
             <div className="p-4">
@@ -232,9 +301,9 @@ const ProjectDetail = ({ role }) => {
                 )}
               </div>
               <KanbanBoard
-                todoTasks={tasks.todo}
-                inProgressTasks={tasks.inProgress}
-                doneTasks={tasks.done}
+                todoTasks={tasks?.todo}
+                inProgressTasks={tasks?.inProgress}
+                doneTasks={tasks?.done}
                 onTaskMove={handleTaskMove}
               />
             </div>
