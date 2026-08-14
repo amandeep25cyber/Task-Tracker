@@ -2,6 +2,7 @@ import { Task } from "../../models/task.models.js";
 import { asyncHandler } from "../../utils/AsyncHandler.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import mongoose from "mongoose";
+import { ApiError } from "../../utils/ApiError.js";
 
 
 const getDashboardStats = asyncHandler(async(req,res)=>{
@@ -123,7 +124,54 @@ const getTodaysTasks = asyncHandler(async (req, res) => {
     );
 });
 
+const logTaskTime = asyncHandler(async (req, res) => {
+    
+    const { taskId, hours, status } = req.body; 
+    const userId = req.user._id;
+
+    if (!taskId) {
+        throw new ApiError(400,"Task ID is required.");
+    }
+
+    const hoursLogged = Number(hours);
+    if (isNaN(hoursLogged) || hoursLogged < 0 || hoursLogged > 12) {
+        throw new ApiError(400,"Please provide valid hours (between 0 and 12).");
+    }
+
+    const updateQuery = {};
+
+    if (hoursLogged > 0 && status === "done") {
+        updateQuery.$push = {
+            worklogs: {
+                hours: hoursLogged
+            }
+        };
+    }
+
+    if (status) {
+        updateQuery.$set = { status: status };
+    }
+
+    const updatedTask = await Task.findOneAndUpdate(
+        { 
+            _id: taskId, 
+            assignedTo: userId 
+        },
+        updateQuery,
+        { returnDocument: 'after'}
+    );
+
+    if (!updatedTask) {
+        throw new ApiError(404,"Task not found or you are not authorized to log time on it.");
+    }
+
+    res.status(200).json(
+        new ApiResponse(200, updatedTask, "Task progress updated successfully.")
+    );
+});
+
 export {
     getDashboardStats,
     getTodaysTasks,
+    logTaskTime,
 }

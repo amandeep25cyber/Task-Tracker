@@ -3,7 +3,7 @@ import { CheckSquare, Clock, CheckCircle2, MessageSquare, ClockAlert, Plus, Cale
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify"
-import { getDashboardStats, getTodaysTasks } from "../../services/member.services.js";
+import { getDashboardStats, getTodaysTasks, updateLogtimeAndStatus } from "../../services/member.services.js";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { storeDashboardStats } from "../../store/features/memberSlice.js";
@@ -58,10 +58,18 @@ const EmployeeDashboard = () => {
 
   const handleFinalSubmit = async (taskId) => {
     if(!hoursWorked || hoursWorked <= 0) return toast.warning("Enter valid hours that you have given to this task")
+
+    try {
+      const updateTask = await updateLogtimeAndStatus({hours:hoursWorked,status:"done",taskId:completingTaskId});
+      getDashboardStatsData();
+      getTodaysTasksData();
+      setHoursWorked("");
+      setCompletingTaskId(null);
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
     
-    // 1. Call Log Time API (hoursWorked bhejo)
-    // 2. Call Update Status API (status "done" bhejo)
-    // 3. setCompletingTaskId(null)
   };
 
   const recentMessages = [
