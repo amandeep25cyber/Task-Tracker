@@ -10,6 +10,15 @@ const getDashboardStats = async()=>{
     return res?.data;
 }
 
+const getTodaysTasks = async()=>{
+    const res = await axios.get(`${API_URL}/member/todays-tasks`,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
+    getTodaysTasks,
 }

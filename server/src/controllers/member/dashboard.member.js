@@ -106,6 +106,24 @@ const getDashboardStats = asyncHandler(async(req,res)=>{
     );
 })
 
+const getTodaysTasks = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+
+    const upcomingTasks = await Task.find({
+            assignedTo: userId,
+            status: { $in: ["todo", "in-progress"] }
+        })
+        .sort({ status: 1,deadline: 1 })
+        .limit(5)
+        .select("title status priority deadline") 
+        .populate("project", "title")
+
+    res.status(200).json(
+        new ApiResponse(200,upcomingTasks, "Member dashboard stats fetched successfully")
+    );
+});
+
 export {
     getDashboardStats,
+    getTodaysTasks,
 }

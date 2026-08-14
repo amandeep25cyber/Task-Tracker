@@ -3,7 +3,7 @@ import { CheckSquare, Clock, CheckCircle2, MessageSquare, ClockAlert, Plus, Cale
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify"
-import { getDashboardStats } from "../../services/member.services.js";
+import { getDashboardStats, getTodaysTasks } from "../../services/member.services.js";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { storeDashboardStats } from "../../store/features/memberSlice.js";
@@ -14,20 +14,25 @@ const PRIORITY_BADGE = {
   low: "bg-gray-100 text-gray-600",
 };
 
-const EmployeeDashboard = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const statsData = useSelector(state=>state.member.dashboardStats);
-
-  const [tasks, setTasks] = useState([
+/* const [tasks, setTasks] = useState([
     { id: 1, title: "Complete homepage design", priority: "high", status: "in-progress", project: "Website Redesign", done: false },
     { id: 2, title: "Review pull request #42", priority: "medium", status: "todo", project: "API Integration", done: false },
     { id: 3, title: "Update API documentation", priority: "low", status: "todo", project: "Mobile App", done: false },
     { id: 4, title: "Fix login page bug", priority: "high", status: "todo", project: "Auth Module", done: false },
-  ]);
+  ]); */
+
+const EmployeeDashboard = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const statsData = useSelector(state=>state.member.dashboardStats);
+  const [completingTaskId, setCompletingTaskId] = useState(null); 
+  const [hoursWorked, setHoursWorked] = useState("");
+
+  const [tasks, setTasks] = useState([]);
 
   useEffect(()=>{
     getDashboardStatsData();
+    getTodaysTasksData();
   },[]);
 
   const getDashboardStatsData = async()=>{
@@ -40,13 +45,34 @@ const EmployeeDashboard = () => {
     }
   }
 
+  const getTodaysTasksData = async()=>{
+    try {
+      const todaysTasks = await getTodaysTasks();
+      console.log(todaysTasks?.data);
+      setTasks(todaysTasks?.data);
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
+
+  const handleFinalSubmit = async (taskId) => {
+    if(!hoursWorked || hoursWorked <= 0) return toast.warning("Enter valid hours that you have given to this task")
+    
+    // 1. Call Log Time API (hoursWorked bhejo)
+    // 2. Call Update Status API (status "done" bhejo)
+    // 3. setCompletingTaskId(null)
+  };
+
   const recentMessages = [
     { from: "Mike Chen", message: "Can you review the latest design?", time: "10 min ago", unread: true },
     { from: "Sarah Johnson", message: "Great work on the landing page!", time: "1 hour ago", unread: true },
     { from: "Emily Davis", message: "Team meeting at 3 PM today", time: "2 hours ago", unread: false },
   ];
 
-  const toggleDone = (id) => setTasks((p) => p.map((t) => t.id === id ? { ...t, done: !t.done } : t));
+  const toggleDone = (id) => {
+    setCompletingTaskId(id);
+  };
 
   const completed = tasks.filter((t) => t.done).length;
   const active = tasks.filter((t) => !t.done).length;
@@ -70,21 +96,51 @@ const EmployeeDashboard = () => {
         <Card title="Today's Tasks">
           <div className="space-y-2 mb-4">
             {tasks.map((task) => (
-              <div key={task.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${task.done ? "bg-gray-50 border-gray-100 opacity-60" : "bg-white border-gray-200 hover:border-blue-200"}`}>
-                <button
-                  onClick={() => toggleDone(task.id)}
-                  className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors ${task.done ? "bg-emerald-500 border-emerald-500" : "border-gray-300 hover:border-blue-400"}`}
-                >
-                  {task.done && <CheckCircle2 className="w-3 h-3 text-white" />}
-                </button>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${task.done ? "line-through text-gray-400" : "text-gray-900"}`}>{task.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{task.project}</p>
+              <div key={task._id} className="flex-row">
+                <div className={`flex items-center gap-3 p-3 rounded-xl border transition-colors bg-white border-gray-200 hover:border-blue-200`}>
+                  <button
+                    onClick={() => toggleDone(task._id)}
+                    type="button"
+                    className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors border-gray-300 hover:border-blue-400 select-none`}
+                  >
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-medium truncate text-gray-900`}>{task.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{task.project?.title}</p>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${PRIORITY_BADGE[task.priority]}`}>{task.priority}</span>
                 </div>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${PRIORITY_BADGE[task.priority]}`}>{task.priority}</span>
+                {completingTaskId === task._id && (
+                  <div className="mt-2 flex gap-2 animate-fade-in-down">
+                    <input 
+                      type="number" 
+                      placeholder="Hours spent?" 
+                      value={hoursWorked}
+                      max={12}
+                      min={0}
+                      onChange={(e) => setHoursWorked(e.target.value)}
+                      className="shadow-md border border-gray-200 p-2 pl-5 outline-0 rounded-full text-sm w-full"
+                    />
+                    <button 
+                      onClick={() => handleFinalSubmit(task._id)}
+                      className="bg-blue-500 shadow-md text-white px-5 rounded-full text-sm"
+                    >
+                      Done
+                    </button>
+                    <button 
+                      onClick={() => setCompletingTaskId(null)}
+                      className="text-black shadow-md px-5 rounded-full text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
+          {tasks?.length ===0 && <div className="flex-wrap min-h-10">
+                  <p className={`text-center text-sm font-medium`}>No Tasks for today</p>
+                </div>}
           <button onClick={() => navigate("/member/tasks")} className="w-full py-2.5 flex items-center justify-center gap-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-xl border border-blue-100 transition-colors">
             View All Tasks <ArrowRight className="w-4 h-4" />
           </button>
