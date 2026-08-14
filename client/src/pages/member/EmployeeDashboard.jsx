@@ -1,7 +1,12 @@
 import { StatCard, Card } from "../../components/ui/Card";
-import { CheckSquare, Clock, CheckCircle2, MessageSquare, Plus, Calendar, FolderOpen, ArrowRight } from "lucide-react";
+import { CheckSquare, Clock, CheckCircle2, MessageSquare, ClockAlert, Plus, Calendar, FolderOpen, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify"
+import { getDashboardStats } from "../../services/member.services.js";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { storeDashboardStats } from "../../store/features/memberSlice.js";
 
 const PRIORITY_BADGE = {
   high: "bg-red-100 text-red-700",
@@ -11,6 +16,8 @@ const PRIORITY_BADGE = {
 
 const EmployeeDashboard = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const statsData = useSelector(state=>state.member.dashboardStats);
 
   const [tasks, setTasks] = useState([
     { id: 1, title: "Complete homepage design", priority: "high", status: "in-progress", project: "Website Redesign", done: false },
@@ -18,6 +25,20 @@ const EmployeeDashboard = () => {
     { id: 3, title: "Update API documentation", priority: "low", status: "todo", project: "Mobile App", done: false },
     { id: 4, title: "Fix login page bug", priority: "high", status: "todo", project: "Auth Module", done: false },
   ]);
+
+  useEffect(()=>{
+    getDashboardStatsData();
+  },[]);
+
+  const getDashboardStatsData = async()=>{
+    try {
+      const stats = await getDashboardStats();
+      dispatch(storeDashboardStats(stats?.data));
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
 
   const recentMessages = [
     { from: "Mike Chen", message: "Can you review the latest design?", time: "10 min ago", unread: true },
@@ -39,10 +60,10 @@ const EmployeeDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard title="Active Tasks" value={String(active)} change={`${high} high priority`} icon={<CheckSquare className="w-6 h-6" />} trend="neutral" />
-        <StatCard title="Completed Today" value={String(completed)} change="Keep it up!" icon={<CheckCircle2 className="w-6 h-6" />} trend="up" />
-        <StatCard title="Hours Logged" value="6.5h" change="+1.5h vs yesterday" icon={<Clock className="w-6 h-6" />} trend="up" />
-        <StatCard title="Unread Messages" value={String(recentMessages.filter((m) => m.unread).length)} change="2 mentions" icon={<MessageSquare className="w-6 h-6" />} trend="neutral" />
+        <StatCard title="Active Tasks" value={statsData?.activeTasks || "0"} change={`${statsData?.inProgressTasks || "No"} Tasks In Progress`} icon={<CheckSquare className="w-6 h-6" />} trend={statsData?.inProgressTasks > 0 ? "up" : "neutral"} />
+        <StatCard title="Completed This Month" value={statsData?.completedThisMonth || 0} change={`+${statsData?.completedThisWeek || 0} this week`} icon={<CheckCircle2 className="w-6 h-6" />} trend={statsData?.completedThisWeek > 0 ? "up" : "neutral"} />
+        <StatCard title="Hours Logged This Month" value={`${statsData?.hoursLoggedThisMonth || 0} ${statsData?.hoursLoggedThisMonth === 1? "Hour" : "Hours"}`} change={ statsData?.hoursLoggedThisWeek > 0 ? `+${statsData?.hoursLoggedThisWeek}h this week` : "0 hours this Week!"} icon={<Clock className="w-6 h-6" />} trend={ statsData?.hoursLoggedThisWeek > 0 ? "up" : "neutral"} />
+        <StatCard title="Urgent Tasks" value={statsData?.urgentTasks || 0} change={`Overdue Tasks: ${statsData?.overdueTasks || 0}`} icon={<ClockAlert className="w-6 h-6 text-red-600" />} trend={statsData?.overdueTasks > 0 ? "down" : "neutral"} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

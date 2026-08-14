@@ -3,6 +3,7 @@ import cors from "cors"
 import cookieParser from "cookie-parser";
 import authRouter from "./src/routes/auth.routes.js"
 import organisationRoute from "./src/routes/organisation.routes.js"
+import memberRoute from "./src/routes/member.routes.js";
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(cookieParser());
 
 app.use('/api/v2/auth',authRouter)
 app.use('/api/v2/organisation',organisationRoute);
+app.use('/api/v2/member',memberRoute);
 
 // Error handling code
 app.use((err, req, res, next) => {

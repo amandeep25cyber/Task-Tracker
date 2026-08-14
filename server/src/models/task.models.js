@@ -49,10 +49,12 @@ const taskSchema = new mongoose.Schema(
       type: Date,
     },
 
-    hoursLogged: {
-      type: Number,
-      default: 0, 
-    },
+    worklogs: [
+      {
+        hours: { type: Number },
+        loggedOn: { type: Date, default: Date.now } 
+      }
+    ],
 
     tags:[
       {
