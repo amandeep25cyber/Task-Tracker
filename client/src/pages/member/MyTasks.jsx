@@ -1,28 +1,29 @@
 import { KanbanBoard } from "../../components/ui/KanbanBoard";
 import { Filter, Calendar } from "lucide-react";
-import { useState } from "react";
-
-const initialTodo = [
-  { id: "1", title: "Update user profile page", description: "Implement new design for profile settings", priority: "high", tags: ["Frontend"] },
-  { id: "2", title: "Fix navigation bug", description: "Menu not closing on mobile devices", priority: "high", tags: ["Bug Fix"] },
-  { id: "3", title: "Write unit tests", description: "Add tests for authentication module", priority: "medium", tags: ["Testing"] },
-];
-
-const initialInProgress = [
-  { id: "4", title: "Complete homepage design", description: "Finalize hero section and CTA buttons", priority: "high", tags: ["Design", "UI"] },
-  { id: "5", title: "Review pull request", description: "Check code changes for API integration", priority: "medium", tags: ["Code Review"] },
-];
-
-const initialDone = [
-  { id: "6", title: "Setup development environment", priority: "low", tags: ["Setup"] },
-  { id: "7", title: "Update documentation", priority: "medium", tags: ["Documentation"] },
-  { id: "8", title: "Create wireframes", priority: "medium", tags: ["Design"] },
-];
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { getUserTasks } from "../../services/member.services.js";
 
 const MyTasks = ()=> {
-  const [todo, setTodo] = useState(initialTodo);
-  const [inProgress, setInProgress] = useState(initialInProgress);
-  const [done, setDone] = useState(initialDone);
+  const [todo, setTodo] = useState([]);
+  const [inProgress, setInProgress] = useState([]);
+  const [done, setDone] = useState([]);
+
+  useEffect(()=>{
+    getUserTasksData();
+  },[])
+
+  const getUserTasksData = async()=>{
+    try {
+      const tasks = await getUserTasks();
+      setTodo(tasks?.data?.todo);
+      setInProgress(tasks?.data?.inProgress);
+      setDone(tasks?.data?.done);
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
 
   const getAll = () => [
     ...todo.map((t) => ({ ...t, col: "todo" })),
@@ -32,11 +33,11 @@ const MyTasks = ()=> {
 
   const handleTaskMove = (taskId, toColumn) => {
     const all = getAll();
-    const found = all.find((t) => t.id === taskId);
+    const found = all.find((t) => t._id === taskId);
     if (!found) return;
     const { col: fromCol, ...task } = found;
 
-    const remove = (arr) => arr.filter((t) => t.id !== taskId);
+    const remove = (arr) => arr.filter((t) => t._id !== taskId);
     const add = (arr) => [...arr, task];
 
     if (fromCol === "todo") setTodo(remove); else if (fromCol === "inProgress") setInProgress(remove); else setDone(remove);

@@ -79,7 +79,7 @@ function KanbanColumn({ id, title, color, bgColor, tasks, isOver, onDragOver, on
         </div>
         <div className="space-y-3 min-h-16">
           {(tasks || []).map((task) => (
-            <KanbanCard key={task._id} task={task} onDragStart={onDragStart} />
+            <KanbanCard key={task?._id || task?.id} task={task} onDragStart={onDragStart} />
           ))}
           {isOver && tasks.length === 0 && (
             <div className="h-16 rounded-xl border-2 border-dashed border-blue-300 flex items-center justify-center">

@@ -26,8 +26,17 @@ const updateLogtimeAndStatus = async(data)=>{
     return res?.data;
 }
 
+const getUserTasks = async()=>{
+    const res = await axios.get(`${API_URL}/member/tasks`,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getTodaysTasks,
     updateLogtimeAndStatus,
+    getUserTasks,
 }
