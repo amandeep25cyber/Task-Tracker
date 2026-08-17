@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Plus } from "lucide-react";
+import { useSelector } from "react-redux";
 
 function KanbanCard({ task, onDragStart }) {
   const priorityColors = {
@@ -15,7 +16,17 @@ function KanbanCard({ task, onDragStart }) {
     "from-teal-500 to-teal-600",
     "from-orange-500 to-orange-600",
   ];
-  const colorIdx = task.assignedTo?.name ? task.assignedTo?.name?.charCodeAt(0) % avatarColors.length : 0;
+
+  const role = useSelector(state=>state.auth.user.role);
+
+  let colorIdx;
+
+  if(role=="member"){
+    colorIdx = task.createdBy?.name ? task.createdBy?.name?.charCodeAt(0) % avatarColors.length : 0;
+  }
+
+  colorIdx = task.assignedTo?.name ? task.assignedTo?.name?.charCodeAt(0) % avatarColors.length : 0;
+
   return (
     <div
       draggable
@@ -42,9 +53,9 @@ function KanbanCard({ task, onDragStart }) {
             </span>
           ))}
         </div>
-        {task.assignedTo?.name && (
+        {((role === "member" && task.createdBy?.name)||(task.assignedTo?.name ))&& (
           <div className={`w-7 h-7 bg-linear-to-br ${avatarColors[colorIdx]} rounded-full flex items-center justify-center shrink-0`}>
-            <span className="text-white text-[10px] font-semibold">{task.assignedTo?.name?.substring(0, 2).toUpperCase()}</span>
+            <span className="text-white text-[10px] font-semibold">{role !=="member" ? task.assignedTo?.name?.substring(0, 2).toUpperCase() : task.createdBy?.name?.substring(0, 2).toUpperCase()}</span>
           </div>
         )}
       </div>
