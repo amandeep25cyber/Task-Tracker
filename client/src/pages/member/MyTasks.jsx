@@ -2,7 +2,7 @@ import { KanbanBoard } from "../../components/ui/KanbanBoard";
 import { Filter, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { getUserTasks } from "../../services/member.services.js";
+import { getUserTasks, updateLogtimeAndStatus } from "../../services/member.services.js";
 
 const MyTasks = ()=> {
   const [todo, setTodo] = useState([]);
@@ -31,17 +31,33 @@ const MyTasks = ()=> {
     ...done.map((t) => ({ ...t, col: "done" })),
   ];
 
-  const handleTaskMove = (taskId, toColumn) => {
+  const handleTaskMove = async(taskId, toColumn) => {
     const all = getAll();
     const found = all.find((t) => t._id === taskId);
     if (!found) return;
     const { col: fromCol, ...task } = found;
 
+    console.log(task);
+
     const remove = (arr) => arr.filter((t) => t._id !== taskId);
     const add = (arr) => [...arr, task];
 
-    if (fromCol === "todo") setTodo(remove); else if (fromCol === "inProgress") setInProgress(remove); else setDone(remove);
-    if (toColumn === "todo") setTodo(add); else if (toColumn === "inProgress") setInProgress(add); else setDone(add);
+    if (fromCol === "todo") setTodo(remove);
+    else if (fromCol === "inProgress") setInProgress(remove); 
+    else setDone(remove);
+
+    if (toColumn === "todo") setTodo(add); 
+    else if (toColumn === "inProgress") setInProgress(add); 
+    else setDone(add);
+
+    try {
+      const status = toColumn ==="inProgress" ? "in-progress": toColumn;
+      const updatedTask = await updateLogtimeAndStatus({hours:"",status,taskId})
+      console.log(updatedTask)
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
   };
 
   return (

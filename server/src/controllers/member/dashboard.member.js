@@ -148,7 +148,7 @@ const logTaskTime = asyncHandler(async (req, res) => {
         };
     }
 
-    if (status) {
+    if(status && ["in-progress","done","todo"].some((t)=>t===status)){
         updateQuery.$set = { status: status };
     }
 
