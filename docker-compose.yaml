@@ -10,13 +10,9 @@ services:
       - "8080:8080"
     env_file:
       - path: ./server/.env
-        required: false
+        required: true
     environment:
       - PORT=8080
-      - MONGO_URI=${MONGO_URI:-mongodb+srv://stamandeep25:%40Amandeep123@clusterone.8wmxu.mongodb.net}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173}
-      - JWT_SECRET=${JWT_SECRET:-skjkdirwodkgfcnkreowwls}
-      - JWT_EXIPRY=${JWT_EXIPRY:-1d}
 
   # Frontend Client React Web App Service
   client:
