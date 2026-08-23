@@ -1,0 +1,36 @@
+services:
+  # Backend Server API Service
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: task_tracker_server
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file:
+      - path: ./server/.env
+        required: false
+    environment:
+      - PORT=8080
+      - MONGO_URI=${MONGO_URI:-mongodb+srv://stamandeep25:%40Amandeep123@clusterone.8wmxu.mongodb.net}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:5173}
+      - JWT_SECRET=${JWT_SECRET:-skjkdirwodkgfcnkreowwls}
+      - JWT_EXIPRY=${JWT_EXIPRY:-1d}
+
+  # Frontend Client React Web App Service
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080/api/v2
+        VITE_SOCKET_URI: http://localhost:8080
+        VITE_APP_NAME: TaskTracker
+    container_name: task_tracker_client
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - server
+
