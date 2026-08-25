@@ -71,7 +71,7 @@ const getDashboardStats = asyncHandler(async(req,res)=>{
 
     const activeProjects = await Project.countDocuments({
         organisation:req.user?.organisation,
-        status:"active"
+        status:{ $in:["Planning","In Progress"]}
     })
 
     const completedTasks = await Task.countDocuments({
