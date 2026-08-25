@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies (production)
-RUN npm ci --omit=dev || npm install --omit=dev
+RUN npm install
 
 # Copy server application source code
 COPY . .
@@ -21,5 +21,5 @@ ENV PORT=8080
 ENV NODE_ENV=production
 
 # Command to start backend server
-CMD ["node", "server.js"]
+CMD ["npm", "run", "dev"]
 
