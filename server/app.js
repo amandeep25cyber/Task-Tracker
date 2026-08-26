@@ -26,6 +26,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded());
 app.use(cookieParser());
+app.use(express.static('public'));
 
 app.use('/api/v2/auth',authRouter)
 app.use('/api/v2/organisation',organisationRoute);
