@@ -17,7 +17,8 @@ const dashboardStats = asyncHandler(async(req,res)=>{
         $or: [
             { createdBy: userId },
             { members: userId }
-        ]
+        ],
+        organisation:req.user?.organisation
     });
 
     const myProjectIds = myProjects.map(p => p._id);
@@ -66,6 +67,47 @@ const dashboardStats = asyncHandler(async(req,res)=>{
     );
 })
 
+const dashboardActiveProjects = asyncHandler(async(req,res)=>{
+    const userId = req.user._id;
+
+    const activeProjects = await Project.find({
+        $or:[
+            {createdBy:userId},
+            {members:userId}
+        ],
+        organisation:req.user?.organisation,
+        status:{ $in:["Planning","In Progress"]}
+    }).select("title deadline taskCount").lean()
+
+    const updatedProjects = await Promise.all(
+        activeProjects.map(async (project) => {
+
+            const completedTasks = await Task.countDocuments({
+                organisation: req.user.organisation,
+                project: project._id,
+                status: "done"
+            });
+
+            const progress = project.taskCount > 0
+                ? Math.round((completedTasks / project.taskCount) * 100)
+                : 0;
+
+            return {
+                ...project,
+                progress
+            };
+        })
+    );
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200,updatedProjects,"Projects fetched successfully")
+    )
+});
+
+
 export {
     dashboardStats,
+    dashboardActiveProjects,
 }
