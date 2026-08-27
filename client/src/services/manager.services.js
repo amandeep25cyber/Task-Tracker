@@ -20,7 +20,17 @@ const getActiveProjects = async() =>{
     return res?.data;
 }
 
+const getUpcomingDeadlines = async() =>{
+    
+    const res = await axios.get(`${API_URL}/manager/upcoming-deadlines`,{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getActiveProjects,
+    getUpcomingDeadlines,
 }

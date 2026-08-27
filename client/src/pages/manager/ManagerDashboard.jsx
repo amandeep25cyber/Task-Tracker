@@ -3,7 +3,7 @@ import { FolderKanban, Clock, CheckCircle2, Users, AlertCircle } from "lucide-re
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import { getActiveProjects, getDashboardStats } from "../../services/manager.services.js";
+import { getActiveProjects, getDashboardStats, getUpcomingDeadlines } from "../../services/manager.services.js";
 
 const activeProjects = [
   { id: 1, name: "Website Redesign", progress: 65, tasks: 16, deadline: "May 30" },
@@ -27,10 +27,12 @@ const ManagerDashboard = ()=> {
 
   const [stats, setStats] = useState({});
   const [activeProjects, setActiveProjects] = useState([]);
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
 
   useEffect(()=>{
     getStatsData();
     getActiveProjectsData();
+    getUpcomingDeadlinesData();
   },[]);
 
   const getStatsData = async()=>{
@@ -48,7 +50,18 @@ const ManagerDashboard = ()=> {
     try {
       const result = await getActiveProjects();
       setActiveProjects(result?.data);
-      
+
+    } catch (error) {
+      console.log(error.response?.data?.message);
+      toast.error(error.response?.data?.message);
+    }
+  }
+
+  const getUpcomingDeadlinesData = async()=>{
+    try {
+      const result = await getUpcomingDeadlines();
+      setUpcomingDeadlines(result?.data);
+
     } catch (error) {
       console.log(error.response?.data?.message);
       toast.error(error.response?.data?.message);
@@ -135,17 +148,17 @@ const ManagerDashboard = ()=> {
             {upcomingDeadlines.map((item, idx) => (
               <div key={idx} className="p-4 bg-gray-50 rounded-xl">
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-gray-900 text-sm">{item.task}</h4>
+                  <h4 className="font-medium text-gray-900 text-sm">{item.title}</h4>
                   <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
                     item.priority === "high" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"
                   }`}>
                     {item.priority}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{item.project}</p>
+                <p className="text-sm text-gray-600 mb-2">{item.project?.title}</p>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <AlertCircle className="w-4 h-4" />
-                  {item.date}
+                  {formatDeadline(item.deadline)}
                 </div>
               </div>
             ))}
