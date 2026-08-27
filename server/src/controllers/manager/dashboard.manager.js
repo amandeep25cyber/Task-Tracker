@@ -77,7 +77,10 @@ const dashboardActiveProjects = asyncHandler(async(req,res)=>{
         ],
         organisation:req.user?.organisation,
         status:{ $in:["Planning","In Progress"]}
-    }).select("title deadline taskCount").lean()
+    })
+    .select("title deadline taskCount")
+    .limit(5)
+    .lean()
 
     const updatedProjects = await Promise.all(
         activeProjects.map(async (project) => {
@@ -106,8 +109,43 @@ const dashboardActiveProjects = asyncHandler(async(req,res)=>{
     )
 });
 
+const dashboardUpcomingDeadlines = asyncHandler(async(req,res)=>{
+    const userId = req.user?._id;
+    const orgId = req.user?.organisation;
+
+    const activeProjects = await Project.find({
+        $or:[
+            { members: userId },
+            { createdBy: userId }
+        ],
+        organisation:orgId,
+        status: { $in: ["In Progress","Planning"]}
+    })
+    .select("_id title")
+    .lean();
+
+    const projectIds = activeProjects.map(project=>project._id);
+
+    const upcomingDeadlines = await Task.find({
+        project:{ $in: projectIds },
+        organisation: orgId,
+        deadline: { $gte: new Date() },
+        status: { $ne: "done"}
+    })
+    .sort({ deadline: 1})
+    .limit(5)
+    .populate("project","title")
+    .select("title deadline priority project")
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200, upcomingDeadlines, "Fetched Successfully")
+    )
+})
 
 export {
     dashboardStats,
     dashboardActiveProjects,
+    dashboardUpcomingDeadlines,
 }
