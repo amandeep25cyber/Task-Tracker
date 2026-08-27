@@ -1,6 +1,9 @@
 import { StatCard, Card } from "../../components/ui/Card";
 import { FolderKanban, Clock, CheckCircle2, Users, AlertCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import { getDashboardStats } from "../../services/manager.services.js";
 
 const activeProjects = [
   { id: 1, name: "Website Redesign", progress: 65, tasks: 16, deadline: "May 30" },
@@ -21,6 +24,25 @@ const teamActivity = [
 ];
 
 const ManagerDashboard = ()=> {
+
+  const [stats, setStats] = useState({});
+
+  useEffect(()=>{
+    getStatsData();
+  },[]);
+
+  const getStatsData = async()=>{
+    try {
+      const result = await getDashboardStats();
+      console.log(result);
+    
+
+    } catch (error) {
+      console.log(error.response?.data?.message);
+      toast.error(error.response?.data?.message);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
