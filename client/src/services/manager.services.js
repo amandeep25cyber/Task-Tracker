@@ -11,6 +11,16 @@ const getDashboardStats = async() =>{
     return response?.data;
 }
 
+const getActiveProjects = async() =>{
+    
+    const res = await axios.get(`${API_URL}/manager/active-projects`,{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
+    getActiveProjects,
 }

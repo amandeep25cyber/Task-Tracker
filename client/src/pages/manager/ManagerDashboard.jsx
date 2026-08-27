@@ -3,7 +3,7 @@ import { FolderKanban, Clock, CheckCircle2, Users, AlertCircle } from "lucide-re
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import { getDashboardStats } from "../../services/manager.services.js";
+import { getActiveProjects, getDashboardStats } from "../../services/manager.services.js";
 
 const activeProjects = [
   { id: 1, name: "Website Redesign", progress: 65, tasks: 16, deadline: "May 30" },
@@ -26,22 +26,39 @@ const teamActivity = [
 const ManagerDashboard = ()=> {
 
   const [stats, setStats] = useState({});
+  const [activeProjects, setActiveProjects] = useState([]);
 
   useEffect(()=>{
     getStatsData();
+    getActiveProjectsData();
   },[]);
 
   const getStatsData = async()=>{
     try {
       const result = await getDashboardStats();
-      console.log(result);
-    
+      setStats(result?.data);
 
     } catch (error) {
       console.log(error.response?.data?.message);
       toast.error(error.response?.data?.message);
     }
   }
+
+  const getActiveProjectsData = async()=>{
+    try {
+      const result = await getActiveProjects();
+      setActiveProjects(result?.data);
+      
+    } catch (error) {
+      console.log(error.response?.data?.message);
+      toast.error(error.response?.data?.message);
+    }
+  }
+
+  const formatDeadline = (d) => {
+    if (!d) return "—";
+    try { return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }); } catch { return d; }
+  };
 
   return (
     <div className="space-y-6">
@@ -53,28 +70,28 @@ const ManagerDashboard = ()=> {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Active Projects"
-          value="8"
-          change="+2 this month"
+          value={ stats?.activeProjects || 0 }
+          change={ `+${stats?.projectsThisMonth || 0 } this month` }
           icon={<FolderKanban className="w-6 h-6" />}
-          trend="up"
+          trend={stats?.projectsThisMonth > 0 ? "up" : "neutral"}
         />
         <StatCard
           title="Pending Tasks"
-          value="53"
+          value={ stats?.pendingTasks || 0 }
           change="Across all projects"
           icon={<Clock className="w-6 h-6" />}
           trend="neutral"
         />
         <StatCard
           title="Completed This Week"
-          value="47"
+          value={ stats?.completedThisWeek || 0 }
           change="+12% vs last week"
           icon={<CheckCircle2 className="w-6 h-6" />}
           trend="up"
         />
         <StatCard
           title="Team Members"
-          value="12"
+          value={ stats?.teamMembers || 0 }
           change="3 active now"
           icon={<Users className="w-6 h-6" />}
           trend="neutral"
@@ -85,11 +102,11 @@ const ManagerDashboard = ()=> {
         <Card title="Active Projects">
           <div className="space-y-4">
             {activeProjects.map((project) => (
-              <div key={project.id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                <Link to={`/manager/project/${project.id}`}>
+              <div key={project._id} className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <Link to={`/manager/project/${project._id}`}>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-900">{project.name}</h4>
-                    <span className="text-sm text-gray-600">{project.tasks} tasks</span>
+                    <h4 className="font-medium text-gray-900">{project.title}</h4>
+                    <span className="text-sm text-gray-600">{project.taskCount} tasks</span>
                   </div>
                   <div className="mb-2">
                     <div className="flex items-center justify-between text-sm mb-1">
@@ -105,7 +122,7 @@ const ManagerDashboard = ()=> {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Clock className="w-4 h-4" />
-                    Due {project.deadline}
+                    Due {formatDeadline(project?.deadline)}
                   </div>
                 </Link>
               </div>
