@@ -2,6 +2,7 @@ import { asyncHandler } from "../../utils/AsyncHandler.js"
 import { Project } from "../../models/project.models.js"
 import { Task } from "../../models/task.models.js"
 import { ApiResponse } from "../../utils/ApiResponse.js"
+import { User } from "../../models/user.models.js"
 
 const managerProjects = asyncHandler(async(req,res)=>{
     
@@ -15,7 +16,7 @@ const managerProjects = asyncHandler(async(req,res)=>{
             { members: userId }
         ]
     })
-    .select("title description status deadline members taskCount priority")
+    .select("title description status deadline members taskCount priority health")
     .populate("members","name avatar")
     .lean();
 
@@ -75,7 +76,29 @@ const managerProjects = asyncHandler(async(req,res)=>{
     )
 });
 
+const getAllUsers = asyncHandler(async (req, res) => {
+    
+    const orgId = req.user.organisation;
+    
+    // Agar frontend ne koi specific role manga hai (like ?role=manager)
+    const { role } = req.query; 
+
+    const query = { organisation: orgId };
+    if (role) {
+        query.role = role;
+    }
+
+    const users = await User.find(query)
+        .select("name email role avatar")
+        .sort({ createdAt: -1 }); // Naye users upar dikhein
+
+    return res.status(200).json(
+        new ApiResponse(200, users, "Organisation users fetched successfully")
+    );
+});
+
 export {
     managerProjects,
+    getAllUsers,
 }
 

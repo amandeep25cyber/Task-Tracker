@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import { toast } from "react-toastify";
+import { getAllUsersOfOrg, getManagerProjects } from "../../services/manager.services.js"
 
 const TEAM_MEMBERS = [
   { name: "Emily Davis", avatar: "ED" },
@@ -60,10 +62,10 @@ const statusColors = {
   "On Hold": "bg-gray-100 text-gray-600",
 };
 
-const priorityDot = {
-  high: "bg-red-500",
-  medium: "bg-amber-500",
-  low: "bg-emerald-500",
+const healthDot = {
+  Critical: "bg-red-500",
+  Warning: "bg-amber-500",
+  Good: "bg-emerald-500",
 };
 
 const avatarGradients = [
@@ -75,13 +77,12 @@ const avatarGradients = [
 ];
 
 const DEFAULT_FORM = {
-  name: "",
+  title: "",
   description: "",
   status: "Planning",
   deadline: "",
-  totalTasks: "10",
-  priority: "medium",
-  selectedMembers: [],
+  health: "Good",
+  members: [],
 };
 
 const MyProjects = ()=> {
@@ -91,8 +92,8 @@ const MyProjects = ()=> {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [showActions, setShowActions] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [toast, setToast] = useState(null);
+  const [deleteConfirm,setDeleteConfirm] = useState(null);
+  const [usersData, setUsersData] = useState([]);
   const actionsRef = useRef(null);
 
   useEffect(() => {
@@ -103,91 +104,76 @@ const MyProjects = ()=> {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3000);
-  };
+  useEffect(()=>{
+    getProjectsData();
+  },[])
+
+  const getProjectsData = async() =>{
+    try {
+      const result = await getManagerProjects();
+      setProjects(result?.data);
+
+    } catch (error) {
+      console.log(error.response?.data?.message)
+      toast.error(error.response?.data?.message)
+    }
+  }
+
+  const getTeamMemberData = async() =>{
+    try {
+      const result = await getAllUsersOfOrg();
+      setUsersData(result?.data);
+
+    } catch (error) {
+      console.log(error.response?.data?.message)
+      toast.error(error.response?.data?.message)
+    }
+  }
+
+  const generateLetter = (name) =>{
+    return name.slice(0,2).toUpperCase();
+  }
+
 
   const openCreate = () => {
+    getTeamMemberData();
     setForm(DEFAULT_FORM);
     setEditingId(null);
     setShowModal(true);
   };
 
   const openEdit = (p) => {
+    getTeamMemberData();
     setForm({
-      name: p.name,
+      title: p.title,
       description: p.description,
       status: p.status,
-      deadline: p.deadline,
-      totalTasks: String(p.tasks.total),
-      priority: p.priority,
-      selectedMembers: p.team,
+      deadline: p.deadline ? p.deadline.split("T")[0] : "",
+      health: p.health,
+      members: p.members?.map(user=>user._id),
     });
-    setEditingId(p.id);
+    setEditingId(p._id);
     setShowModal(true);
     setShowActions(null);
   };
 
-  const toggleMember = (name) =>
+  const toggleMember = (_id) =>
     setForm((f) => ({
       ...f,
-      selectedMembers: f.selectedMembers.includes(name)
-        ? f.selectedMembers.filter((m) => m !== name)
-        : [...f.selectedMembers, name],
+      members: f.members.includes(_id)
+        ? f.members.filter((m) => m !== _id)
+        : [...f.members, _id],
     }));
 
   const saveProject = () => {
-    if (!form.name.trim()) return;
-    const avatars = form.selectedMembers.map(
-      (name) => TEAM_MEMBERS.find((m) => m.name === name)?.avatar ?? name.substring(0, 2).toUpperCase()
-    );
-    const total = parseInt(form.totalTasks) || 0;
-    const progress =
-      form.status === "Completed" ? 100 : form.status === "Planning" ? 5 : Math.round(Math.random() * 50 + 20);
-
-    if (editingId !== null) {
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === editingId
-            ? {
-                ...p,
-                name: form.name,
-                description: form.description,
-                status: form.status,
-                deadline: form.deadline,
-                team: form.selectedMembers,
-                teamAvatars: avatars,
-                priority: form.priority,
-                tasks: { total, completed: p.tasks.completed, pending: Math.max(0, total - p.tasks.completed) },
-              }
-            : p
-        )
-      );
-      showToast("Project updated");
-    } else {
-      const newProject = {
-        id: Date.now(),
-        name: form.name,
-        description: form.description,
-        status: form.status,
-        progress,
-        team: form.selectedMembers,
-        teamAvatars: avatars,
-        deadline: form.deadline,
-        tasks: { total, completed: 0, pending: total },
-        priority: form.priority,
-      };
-      setProjects((prev) => [newProject, ...prev]);
-      showToast("Project created!");
-    }
-    setShowModal(false);
+    if (!form.title.trim()) return;
+    console.log(form)
+    
   };
 
   const deleteProject = (id) => {
     setProjects((prev) => prev.filter((p) => p.id !== id));
     setDeleteConfirm(null);
-    showToast("Project deleted");
   };
 
   const filtered =
@@ -206,13 +192,6 @@ const MyProjects = ()=> {
 
   return (
     <div className="space-y-6">
-      {toast && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span className="text-sm font-medium">{toast}</span>
-        </div>
-      )}
-
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">My Projects</h1>
@@ -270,18 +249,18 @@ const MyProjects = ()=> {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {filtered.map((project) => (
-          <Card key={project.id}>
+        {filtered.map((project, idx) => (
+          <Card key={project._id || idx}>
             <div className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${priorityDot[project.priority]}`} />
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${healthDot[project.health]}`} />
                     <Link
-                      to={`/manager/project/${project.id}`}
+                      to={`/manager/project/${project._id}`}
                       className="font-semibold text-gray-900 hover:text-blue-600 transition-colors truncate"
                     >
-                      {project.name}
+                      {project.title}
                     </Link>
                   </div>
                   {project.description && (
@@ -295,32 +274,32 @@ const MyProjects = ()=> {
                 </div>
                 <div className="flex items-center gap-2 ml-3 shrink-0">
                   <div className="flex -space-x-2">
-                    {project.teamAvatars.slice(0, 3).map((av, idx) => (
+                    {(project.members || []).slice(0, 3).map((av, idx) => (
                       <div
                         key={idx}
                         className={`w-7 h-7 bg-linear-to-br ${avatarGradients[idx % avatarGradients.length]} rounded-full flex items-center justify-center border-2 border-white`}
-                        title={project.team[idx]}
+                        title={project.members[idx].name}
                       >
-                        <span className="text-white text-[9px] font-bold">{av}</span>
+                        <span className="text-white text-[9px] font-bold">{generateLetter(av.name)}</span>
                       </div>
                     ))}
-                    {project.team.length > 3 && (
+                    {project.members?.length > 3 && (
                       <div className="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center border-2 border-white">
-                        <span className="text-gray-600 text-[9px] font-bold">+{project.team.length - 3}</span>
+                        <span className="text-gray-600 text-[9px] font-bold">+{project.members?.length - 3}</span>
                       </div>
                     )}
                   </div>
-                  <div className="relative" ref={showActions === project.id ? actionsRef : undefined}>
+                  <div className="relative" ref={showActions === project._id ? actionsRef : undefined}>
                     <button
-                      onClick={() => setShowActions(showActions === project.id ? null : project.id)}
+                      onClick={() => setShowActions(showActions === project._id ? null : project._id)}
                       className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
                     >
                       <MoreVertical className="w-4 h-4 text-gray-500" />
                     </button>
-                    {showActions === project.id && (
+                    {showActions === project._id && (
                       <div className="absolute right-0 mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-20">
                         <Link
-                          to={`/manager/project/${project.id}`}
+                          to={`/manager/project/${project._id}`}
                           className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                           onClick={() => setShowActions(null)}
                         >
@@ -334,7 +313,7 @@ const MyProjects = ()=> {
                         </button>
                         <div className="my-1 border-t border-gray-100" />
                         <button
-                          onClick={() => { setDeleteConfirm(project.id); setShowActions(null); }}
+                          onClick={() => { setDeleteConfirm(project._id); setShowActions(null); }}
                           className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                         >
                           <Trash2 className="w-4 h-4" /> Delete
@@ -376,7 +355,7 @@ const MyProjects = ()=> {
               <div className="flex items-center justify-between text-xs text-gray-500">
                 <div className="flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5" />
-                  {project.team.length} member{project.team.length !== 1 ? "s" : ""}
+                  {project.members?.length} member{project.members?.length !== 1 ? "s" : ""}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5" />
@@ -394,7 +373,7 @@ const MyProjects = ()=> {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Project?</h3>
             <p className="text-sm text-gray-500 mb-6">
-              "{projects.find((p) => p.id === deleteConfirm)?.name}" will be permanently deleted.
+              "{projects.find((p) => p._id === deleteConfirm)?.name}" will be permanently deleted.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
@@ -426,8 +405,8 @@ const MyProjects = ()=> {
                 <label className="text-sm font-semibold text-gray-700 block mb-1.5">Project Name *</label>
                 <input
                   autoFocus
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
                   placeholder="e.g. Q3 Marketing Campaign"
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 />
@@ -458,60 +437,47 @@ const MyProjects = ()=> {
                     <option>Completed</option>
                   </select>
                 </div>
-                <div>
-                  <label className="text-sm font-semibold text-gray-700 block mb-1.5">Priority</label>
-                  <select
-                    value={form.priority}
-                    onChange={(e) => setForm({ ...form, priority: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </select>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold text-gray-700 block mb-1.5">
                     <Calendar className="w-3.5 h-3.5 inline mr-1" />Deadline
                   </label>
                   <input
                     type="date"
-                    value={form.deadline}
+                    value={form.deadline ? form.deadline.split("T")[0] : ""}
                     onChange={(e) => setForm({ ...form, deadline: e.target.value })}
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 block mb-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" />Total Tasks
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.totalTasks}
-                    onChange={(e) => setForm({ ...form, totalTasks: e.target.value })}
-                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  />
+                  <label className="text-sm font-semibold text-gray-700 block mb-1.5">Health</label>
+                  <select
+                    value={form.health}
+                    onChange={(e) => setForm({ ...form, health: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                  >
+                    <option>Good</option>
+                    <option>Critical</option>
+                    <option>Warning</option>
+                  </select>
                 </div>
               </div>
-
               <div>
                 <label className="text-sm font-semibold text-gray-700 block mb-2">
                   Team Members
-                  {form.selectedMembers.length > 0 && (
-                    <span className="ml-2 text-xs font-normal text-blue-600">{form.selectedMembers.length} selected</span>
+                  {form.members?.length > 0 && (
+                    <span className="ml-2 text-xs font-normal text-blue-600">{form.members.length} selected</span>
                   )}
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {TEAM_MEMBERS.map((member) => {
-                    const selected = form.selectedMembers.includes(member.name);
+                  {usersData.map((member) => {
+                    const selected = form.members?.includes(member._id);
                     return (
                       <button
-                        key={member.name}
-                        onClick={() => toggleMember(member.name)}
+                        key={member._id}
+                        onClick={() => toggleMember(member._id)}
                         className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all ${
                           selected
                             ? "border-blue-500 bg-blue-50"
@@ -519,7 +485,7 @@ const MyProjects = ()=> {
                         }`}
                       >
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-linear-to-br ${selected ? "from-blue-500 to-blue-600" : "from-gray-400 to-gray-500"}`}>
-                          <span className="text-white text-[9px] font-bold">{member.avatar}</span>
+                          <span className="text-white text-[9px] font-bold">{member.name?.slice(0,2).toUpperCase()}</span>
                         </div>
                         <span className={`text-xs font-semibold truncate ${selected ? "text-blue-700" : "text-gray-700"}`}>{member.name}</span>
                         {selected && <CheckCircle2 className="w-4 h-4 text-blue-500 ml-auto shrink-0" />}
@@ -539,7 +505,7 @@ const MyProjects = ()=> {
               </button>
               <button
                 onClick={saveProject}
-                disabled={!form.name.trim()}
+                disabled={!form.title.trim()}
                 className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-40"
               >
                 {editingId !== null ? "Save Changes" : "Create Project"}

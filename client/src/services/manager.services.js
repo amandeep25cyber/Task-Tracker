@@ -29,8 +29,28 @@ const getUpcomingDeadlines = async() =>{
     return res?.data;
 }
 
+const getManagerProjects = async()=>{
+
+    const res = await axios.get(`${API_URL}/manager/projects`,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
+const getAllUsersOfOrg = async()=>{
+
+    const res = await axios.get(`${API_URL}/manager/users`,{
+        withCredentials:true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getActiveProjects,
     getUpcomingDeadlines,
+    getManagerProjects,
+    getAllUsersOfOrg,
 }

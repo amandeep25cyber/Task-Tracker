@@ -5,18 +5,6 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getActiveProjects, getDashboardStats, getUpcomingDeadlines } from "../../services/manager.services.js";
 
-const activeProjects = [
-  { id: 1, name: "Website Redesign", progress: 65, tasks: 16, deadline: "May 30" },
-  { id: 2, name: "Mobile App Launch", progress: 40, tasks: 37, deadline: "Jun 15" },
-  { id: 3, name: "API Integration", progress: 100, tasks: 0, deadline: "May 20" },
-];
-
-const upcomingDeadlines = [
-  { task: "Complete homepage design", project: "Website Redesign", date: "May 25", priority: "high" },
-  { task: "Review API documentation", project: "API Integration", date: "May 26", priority: "medium" },
-  { task: "Deploy to staging", project: "Mobile App Launch", date: "May 28", priority: "high" },
-];
-
 const teamActivity = [
   { member: "Emily Davis", task: "Updated landing page design", time: "2 hours ago" },
   { member: "John Smith", task: "Completed user authentication", time: "4 hours ago" },
