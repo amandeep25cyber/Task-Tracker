@@ -172,7 +172,7 @@ const MyProjects = ()=> {
   };
 
   const deleteProject = (id) => {
-    setProjects((prev) => prev.filter((p) => p.id !== id));
+    setProjects((prev) => prev.filter((p) => p._id !== id));
     setDeleteConfirm(null);
   };
 
@@ -373,7 +373,7 @@ const MyProjects = ()=> {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Project?</h3>
             <p className="text-sm text-gray-500 mb-6">
-              "{projects.find((p) => p._id === deleteConfirm)?.name}" will be permanently deleted.
+              "{projects.find((p) => p._id === deleteConfirm)?.title}" will be permanently deleted.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteConfirm(null)} className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
