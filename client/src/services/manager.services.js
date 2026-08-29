@@ -47,10 +47,30 @@ const getAllUsersOfOrg = async()=>{
     return res?.data;
 }
 
+const updateSingleProject = async (id, data) =>{
+
+    const res = await axios.put(`${API_URL}/manager/project/${id}`,data,{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
+const createNewProjectByManager = async (data) =>{
+
+    const res = await axios.post(`${API_URL}/manager/project`,data,{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getActiveProjects,
     getUpcomingDeadlines,
     getManagerProjects,
     getAllUsersOfOrg,
+    updateSingleProject,
+    createNewProjectByManager,
 }

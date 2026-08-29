@@ -6,7 +6,7 @@ import {
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
-import { getAllUsersOfOrg, getManagerProjects } from "../../services/manager.services.js"
+import { createNewProjectByManager, getAllUsersOfOrg, getManagerProjects, updateSingleProject } from "../../services/manager.services.js"
 
 const TEAM_MEMBERS = [
   { name: "Emily Davis", avatar: "ED" },
@@ -165,9 +165,25 @@ const MyProjects = ()=> {
         : [...f.members, _id],
     }));
 
-  const saveProject = () => {
+  const saveProject = async() => {
     if (!form.title.trim()) return;
-    console.log(form)
+    try {
+      
+      if(editingId){
+        await updateSingleProject(editingId,form);
+        setEditingId(null);
+        toast.success("Project updated successfully");
+      }else{
+        await createNewProjectByManager(form);
+        toast.success("Project created successfully")
+      }
+      setShowModal(false);
+      setForm(DEFAULT_FORM);
+      getProjectsData();
+    } catch (error) {
+      console.log(error.response?.data?.message)
+      toast.error(error.response?.data?.message)
+    }
     
   };
 
