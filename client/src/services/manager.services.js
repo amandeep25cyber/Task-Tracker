@@ -65,6 +65,15 @@ const createNewProjectByManager = async (data) =>{
     return res?.data;
 }
 
+const deleteExistedProject = async (id) =>{
+
+    const res = await axios.delete(`${API_URL}/manager/project/${id}`,{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getActiveProjects,
@@ -73,4 +82,5 @@ export {
     getAllUsersOfOrg,
     updateSingleProject,
     createNewProjectByManager,
+    deleteExistedProject,
 }

@@ -168,11 +168,33 @@ const updateExistedProject = asyncHandler(async (req, res) => {
     );
 });
 
+const deleteManagerProject = asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    const orgId = req.user.organisation;
+
+    const deletedProject = await Project.findOneAndDelete({ 
+        _id: projectId, 
+        organisation: orgId 
+    });
+
+    if (!deletedProject) {
+        throw new ApiError(404, "Project not found or access denied");
+    }
+
+    // Database Cleanup: Is project ke saare tasks bhi delete kar do
+    await Task.deleteMany({ project: projectId });
+
+    return res.status(200).json(
+        new ApiResponse(200, {}, "Project and its associated tasks deleted successfully")
+    );
+});
+
 
 export {
     managerProjects,
     getAllUsers,
     createNewProject,
     updateExistedProject,
+    deleteManagerProject,
 }
 

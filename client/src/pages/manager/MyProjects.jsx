@@ -6,54 +6,7 @@ import {
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
-import { createNewProjectByManager, getAllUsersOfOrg, getManagerProjects, updateSingleProject } from "../../services/manager.services.js"
-
-const TEAM_MEMBERS = [
-  { name: "Emily Davis", avatar: "ED" },
-  { name: "John Smith", avatar: "JS" },
-  { name: "Lisa Wong", avatar: "LW" },
-  { name: "David Miller", avatar: "DM" },
-  { name: "Sarah Johnson", avatar: "SJ" },
-];
-
-const initialProjects = [
-  {
-    id: 1,
-    name: "Website Redesign",
-    description: "Complete redesign of the company website with modern UI/UX principles.",
-    status: "In Progress",
-    progress: 65,
-    team: ["Emily Davis", "John Smith", "Lisa Wong"],
-    teamAvatars: ["ED", "JS", "LW"],
-    deadline: "2026-05-30",
-    tasks: { total: 45, completed: 29, pending: 16 },
-    priority: "high",
-  },
-  {
-    id: 2,
-    name: "Mobile App Launch",
-    description: "Build and launch the cross-platform mobile application.",
-    status: "In Progress",
-    progress: 40,
-    team: ["John Smith", "Lisa Wong"],
-    teamAvatars: ["JS", "LW"],
-    deadline: "2026-06-15",
-    tasks: { total: 62, completed: 25, pending: 37 },
-    priority: "high",
-  },
-  {
-    id: 3,
-    name: "API Integration",
-    description: "Integrate payment gateway and analytics APIs into the platform.",
-    status: "Completed",
-    progress: 100,
-    team: ["David Miller", "John Smith"],
-    teamAvatars: ["DM", "JS"],
-    deadline: "2026-05-20",
-    tasks: { total: 28, completed: 28, pending: 0 },
-    priority: "medium",
-  },
-];
+import { createNewProjectByManager, deleteExistedProject, getAllUsersOfOrg, getManagerProjects, updateSingleProject } from "../../services/manager.services.js"
 
 const statusColors = {
   "Completed": "bg-emerald-100 text-emerald-700",
@@ -86,7 +39,7 @@ const DEFAULT_FORM = {
 };
 
 const MyProjects = ()=> {
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState([]);
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -187,8 +140,15 @@ const MyProjects = ()=> {
     
   };
 
-  const deleteProject = (id) => {
-    setProjects((prev) => prev.filter((p) => p._id !== id));
+  const deleteProject = async(id) => {
+    try {
+      await deleteExistedProject(id);
+      setProjects((prev) => prev.filter((p) => p._id !== id));
+      toast.success("Project deleted!");
+    } catch (error) {
+      console.log(error.response?.data?.message)
+      toast.error(error.response?.data?.message)
+    }
     setDeleteConfirm(null);
   };
 
@@ -490,20 +450,25 @@ const MyProjects = ()=> {
                 <div className="grid grid-cols-2 gap-2">
                   {usersData.map((member) => {
                     const selected = form.members?.includes(member._id);
-                    return (
+                     return (
                       <button
                         key={member._id}
                         onClick={() => toggleMember(member._id)}
                         className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all ${
                           selected
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
                         }`}
                       >
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-linear-to-br ${selected ? "from-blue-500 to-blue-600" : "from-gray-400 to-gray-500"}`}>
-                          <span className="text-white text-[9px] font-bold">{member.name?.slice(0,2).toUpperCase()}</span>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-linear-to-br ${
+                          selected ? "from-blue-500 to-blue-600" : "from-gray-400 to-gray-500"
+                        }`}>
+                          <span className="text-white text-[9px] font-bold">{member.avatar || member.name.slice(0,2).toUpperCase()}</span>
                         </div>
-                        <span className={`text-xs font-semibold truncate ${selected ? "text-blue-700" : "text-gray-700"}`}>{member.name}</span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold truncate">{member.name}</p>
+                          <p className={`text-[10px] ${selected ? "text-blue-500" : "text-gray-400"}`}>{member.role}</p>
+                        </div>
                         {selected && <CheckCircle2 className="w-4 h-4 text-blue-500 ml-auto shrink-0" />}
                       </button>
                     );
