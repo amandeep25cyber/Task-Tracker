@@ -6,6 +6,7 @@ import { KanbanBoard } from "./ui/KanbanBoard";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { createNewTask, getSingleProject, taskStatusUpdate } from "../services/organisation.services";
+import { getProjectDataById, updateTaskStatus } from "../services/manager.services";
 
 const tabs = [
   { id: "overview", label: "Overview", icon: CheckSquare },
@@ -75,7 +76,12 @@ const ProjectDetail = ({ role }) => {
 
   const getProjectData = async () =>{
     try {
-      const projectData = await getSingleProject(id);
+      let projectData ;
+      if(role==="admin"){
+        projectData = await getSingleProject(id);
+      }else{
+        projectData = await getProjectDataById(id);
+      }
       const pData = projectData?.data?.project;
       const tasksData = projectData?.data?.tasks;
       setNewTask((prev)=>({...prev,project:pData._id}))
@@ -101,40 +107,44 @@ const ProjectDetail = ({ role }) => {
 
   // Tasks state
   const [tasks, setTasks] = useState({});
-  const handleTaskMove = (taskId, toColumn) => {
+  const handleTaskMove = async(taskId, toColumn) => {
     const fromCol = (["todo", "inProgress", "done"]).find((c) =>
       tasks[c].some((t) => t._id === taskId)
     );
     if (!fromCol || fromCol === toColumn) return;
     const task = tasks[fromCol].find((t) => t._id === taskId);
     if(!task) return;
+    
+    let status = toColumn;
+    if(toColumn==="inProgress"){
+      status = "in-progress";
+    }
+    const isSuccess = await updateStatusOfTask(status,task._id);
+    if(!isSuccess) return ;
+
     setTasks((prev) => ({
       ...prev,
       [fromCol]: prev[fromCol].filter((t) => t._id !== taskId),
       [toColumn]: [...prev[toColumn], task],
     }));
-    let status = toColumn;
-    if(toColumn==="inProgress"){
-      status = "in-progress";
-    }
-    updateStatusOfTask(status,task._id);
-    
   };
 
   const updateStatusOfTask = async(status,id)=>{
     try {
-      const response = await taskStatusUpdate(status,id);
+      if(role==="admin") await taskStatusUpdate(status,id);
+      else await updateTaskStatus(status,id)
       getProjectData();
-      console.log(response);
+      return true;
     } catch (error) {
       toast.error(error?.response?.data?.message);
       console.log(error?.response?.data?.message);
+      return false;
     }
   }
 
   const addTask = async() =>{
     try {
-      const taskCreated = await createNewTask(newTask);
+      await createNewTask(newTask);
       getProjectData();
       setShowNewTask(false);
     } catch (error) {
@@ -245,10 +255,10 @@ const ProjectDetail = ({ role }) => {
               <div>
                 <h3 className="font-semibold text-gray-900 mb-4">Team Members</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {projectData.team.map((member) => (
-                    <div key={member.name} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                  {projectData.team.map((member,idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                       <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-violet-500 rounded-full flex items-center justify-center shrink-0">
-                        <span className="text-white font-semibold text-sm">{member.avatar}</span>
+                        <span className="text-white font-semibold text-sm">{member.avatar || member.name.slice(0,2).toUpperCase()}</span>
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900 text-sm">{member.name}</p>

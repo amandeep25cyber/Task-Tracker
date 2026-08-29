@@ -189,6 +189,66 @@ const deleteManagerProject = asyncHandler(async (req, res) => {
     );
 });
 
+const getProject = asyncHandler(async (req, res) => {
+    const { projectId } = req.params;
+    const orgId = req.user.organisation;
+
+    const project = await Project.findOne({ 
+        _id: projectId, 
+        organisation: orgId 
+    }).populate("members", "name email avatar jobRole")
+      .populate("createdBy", "name avatar");
+
+    if (!project) {
+        throw new ApiError(404, "Project not found or you don't have access");
+    }
+
+    const tasks = await Task.find({ project: projectId })
+        .populate("assignedTo", "name avatar") 
+        .sort({ createdAt: -1 });
+
+    // Kanban Board ke liye Tasks ko format karna
+    const formattedTasks = {
+        todo: tasks.filter(task => task.status === "todo"),
+        inProgress: tasks.filter(task => task.status === "in-progress"),
+        done: tasks.filter(task => task.status === "done")
+    };
+
+    return res.status(200).json(
+        new ApiResponse(200, { 
+            project, 
+            tasks: formattedTasks
+        }, "Project details and tasks fetched successfully")
+    );
+});
+
+const updateTaskStatusById = asyncHandler(async (req, res) => {
+    const { taskId } = req.params;
+    const { status } = req.body; 
+    const orgId = req.user.organisation;
+
+    const allowedStatuses = ["todo", "in-progress", "done"];
+    if (!status || !allowedStatuses.includes(status)) {
+        throw new ApiError(400, "Invalid or missing task status");
+    }
+
+    const task = await Task.findById(taskId).populate("project");
+
+    if (!task) {
+        throw new ApiError(404, "Task not found");
+    }
+
+    if (task.project.organisation.toString() !== orgId.toString()) {
+        throw new ApiError(403, "Access denied. Task belongs to another organisation.");
+    }
+
+    task.status = status;
+    await task.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, { taskId: task._id, status: task.status }, "Status updated successfully")
+    );
+});
 
 export {
     managerProjects,
@@ -196,5 +256,7 @@ export {
     createNewProject,
     updateExistedProject,
     deleteManagerProject,
+    getProject,
+    updateTaskStatusById,
 }
 

@@ -74,6 +74,24 @@ const deleteExistedProject = async (id) =>{
     return res?.data;
 }
 
+const getProjectDataById = async(id)=>{
+
+    const res = await axios.get(`${API_URL}/manager/project/${id}`,{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
+const updateTaskStatus = async(status,taskId) =>{
+
+    const res = await axios.put(`${API_URL}/manager/task/${taskId}`,{status},{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getActiveProjects,
@@ -83,4 +101,6 @@ export {
     updateSingleProject,
     createNewProjectByManager,
     deleteExistedProject,
+    getProjectDataById,
+    updateTaskStatus,
 }
