@@ -2,7 +2,7 @@ import { Router } from "express";
 import { verifyUser } from "../middlewares/verifyJWT.js";
 import { isManager } from "../middlewares/isManager.js";
 import { dashboardActiveProjects, dashboardStats, dashboardUpcomingDeadlines } from "../controllers/manager/dashboard.manager.js";
-import { createNewProject, deleteManagerProject, getAllUsers, getProject, managerProjects, updateExistedProject, updateTaskStatusById } from "../controllers/manager/projects.manager.js";
+import { createNewProject, createNewTask, deleteManagerProject, getAllUsers, getProject, managerProjects, updateExistedProject, updateTaskStatusById } from "../controllers/manager/projects.manager.js";
 
 const router = Router();
 
@@ -16,5 +16,6 @@ router.route('/project/:projectId').put(verifyUser,isManager,updateExistedProjec
 router.route('/project/:projectId').delete(verifyUser,isManager,deleteManagerProject);
 router.route('/project/:projectId').get(verifyUser,isManager,getProject);
 router.route('/task/:taskId').put(verifyUser,isManager,updateTaskStatusById);
+router.route('/task').post(verifyUser,isManager,createNewTask);
 
 export default router;

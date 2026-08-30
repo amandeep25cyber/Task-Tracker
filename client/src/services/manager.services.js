@@ -92,6 +92,15 @@ const updateTaskStatus = async(status,taskId) =>{
     return res?.data;
 }
 
+const createNewTaskByManager = async(data)=>{
+
+    const res = await axios.post(`${API_URL}/manager/task`,data,{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getActiveProjects,
@@ -103,4 +112,5 @@ export {
     deleteExistedProject,
     getProjectDataById,
     updateTaskStatus,
+    createNewTaskByManager,
 }

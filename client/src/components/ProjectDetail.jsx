@@ -6,7 +6,7 @@ import { KanbanBoard } from "./ui/KanbanBoard";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { createNewTask, getSingleProject, taskStatusUpdate } from "../services/organisation.services";
-import { getProjectDataById, updateTaskStatus } from "../services/manager.services";
+import { createNewTaskByManager, getProjectDataById, updateTaskStatus } from "../services/manager.services";
 
 const tabs = [
   { id: "overview", label: "Overview", icon: CheckSquare },
@@ -59,7 +59,7 @@ const DEFAULT_TASK = {
   assignedTo:"",
   deadline:"",
   project:"",
-  tags:[],
+  tags:"",
 }
 
 const ProjectDetail = ({ role }) => {
@@ -144,9 +144,12 @@ const ProjectDetail = ({ role }) => {
 
   const addTask = async() =>{
     try {
-      await createNewTask(newTask);
+      console.log(newTask)
+      if(role==="admin") await createNewTask(newTask);
+      else await createNewTaskByManager(newTask);
       getProjectData();
       setShowNewTask(false);
+      setNewTask(DEFAULT_TASK);
     } catch (error) {
       toast.error(error?.response?.data?.message);
       console.log(error?.response?.data?.message);

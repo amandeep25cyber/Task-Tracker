@@ -250,6 +250,61 @@ const updateTaskStatusById = asyncHandler(async (req, res) => {
     );
 });
 
+const createNewTask = asyncHandler(async (req, res) => {
+    const { title, description, priority, status, assignedTo, project, tags, deadline } = req.body;
+    const orgId = req.user.organisation;
+
+    if (!title || !project) {
+        throw new ApiError(400, "Title and Project ID are required");
+    }
+
+    const existingProject = await Project.findOne({ 
+        _id: project, 
+        organisation: orgId 
+    });
+
+    if (!existingProject) {
+        throw new ApiError(403, "Project not found or you don't have access");
+    }
+
+    let finalAssignee = null;
+    
+    if (assignedTo && assignedTo !== "Unassigned") {
+        const memberIds = existingProject.members.map(memberId => memberId.toString());
+        
+        if (!memberIds.includes(assignedTo.toString())) {
+            throw new ApiError(400, "Assigned user is not a member of this project!");
+        }
+        
+        finalAssignee = assignedTo; 
+    }
+
+    let parsedTags = [];
+    if (tags) {
+        parsedTags = typeof tags === 'string' ? tags.split(",").map(tag => tag.trim()) : tags;
+    }
+
+    const newTask = await Task.create({
+        title,
+        description,
+        organisation:orgId,
+        assignedTo: finalAssignee, 
+        project,
+        priority: priority || "low",
+        status: status || "todo",
+        tags: parsedTags,
+        createdBy: req.user._id,
+        deadline
+    });
+
+    existingProject.taskCount += 1;
+    await existingProject.save();
+
+    return res.status(201).json(
+        new ApiResponse(201, newTask, "Task created successfully")
+    );
+});
+
 export {
     managerProjects,
     getAllUsers,
@@ -258,5 +313,6 @@ export {
     deleteManagerProject,
     getProject,
     updateTaskStatusById,
+    createNewTask,
 }
 
