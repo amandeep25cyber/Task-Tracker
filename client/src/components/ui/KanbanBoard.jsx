@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Plus } from "lucide-react";
+import { Calendar, Folder, Plus } from "lucide-react";
 import { useSelector } from "react-redux";
 
 function KanbanCard({ task, onDragStart }) {
@@ -19,43 +19,81 @@ function KanbanCard({ task, onDragStart }) {
 
   const role = useSelector(state=>state.auth.user.role);
 
-  let colorIdx;
+  const displayUser = role === "member" ? task.createdBy : task.assignedTo;
 
-  if(role=="member"){
-    colorIdx = task.createdBy?.name ? task.createdBy?.name?.charCodeAt(0) % avatarColors.length : 0;
-  }
+  const colorIdx = displayUser?.name
+    ? displayUser.name.charCodeAt(0) % avatarColors.length
+    : 0;
 
-  colorIdx = task.assignedTo?.name ? task.assignedTo?.name?.charCodeAt(0) % avatarColors.length : 0;
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  };
 
-  return (
+ return (
     <div
       draggable
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
-        onDragStart(task._id, "todo");
+        onDragStart(task._id); // Parent component automatically fromColumn calculate kar raha hai
       }}
-      className="bg-white p-4 rounded-xl border border-gray-200 hover:shadow-md hover:border-blue-200 transition-all cursor-grab active:cursor-grabbing select-none"
+      className="bg-white p-4 rounded-xl border border-gray-200 hover:shadow-md hover:border-blue-300 transition-all cursor-grab active:cursor-grabbing select-none flex flex-col"
     >
-      <h4 className="font-medium text-gray-900 mb-2 leading-snug">{task.title}</h4>
-      {task.description && (
-        <p className="text-sm text-gray-500 mb-3 leading-relaxed line-clamp-2">{task.description}</p>
+      {/* 🚀 NEW: Project Name Label */}
+      {task.project?.title && (
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 mb-2.5">
+          <Folder className="w-3.5 h-3.5 text-gray-400" />
+          <span className="truncate">{task.project?.title}</span>
+        </div>
       )}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5">
+
+      <h4 className="font-semibold text-gray-900 mb-2 leading-snug">{task.title}</h4>
+      
+      {task.description && (
+        <p className="text-sm text-gray-500 mb-4 leading-relaxed line-clamp-2">
+          {task.description}
+        </p>
+      )}
+
+      {/* Spacer pushes the bottom section down if description is short */}
+      <div className="mt-auto pt-2 flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Priority */}
           {task.priority && (
-            <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${priorityColors[task.priority]}`}>
+            <span className={`px-2 py-1 rounded-md text-[11px] uppercase tracking-wider font-bold ${priorityColors[task.priority]}`}>
               {task.priority}
             </span>
           )}
-          {task.tags?.slice(0, 2).map((tag) => (
-            <span key={tag} className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-xs font-medium">
+          
+          {/* Tags (Reduced to 1 tag to save space for Date) */}
+          {task.tags?.slice(0, 1).map((tag) => (
+            <span key={tag} className="px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-[11px] font-semibold">
               {tag}
             </span>
           ))}
+
+          {/* 🚀 NEW: Deadline Indicator */}
+          {task.deadline && (
+            <div 
+              title="Due Date"
+              className="flex items-center gap-1.5 px-2 py-1 bg-gray-50 text-gray-600 rounded-md text-[11px] font-semibold border border-gray-100"
+            >
+              <Calendar className="w-3 h-3 text-gray-500" />
+              <span>{formatDate(task.deadline)}</span>
+            </div>
+          )}
         </div>
-        {((role === "member" && task.createdBy?.name)||(task.assignedTo?.name ))&& (
-          <div className={`w-7 h-7 bg-linear-to-br ${avatarColors[colorIdx]} rounded-full flex items-center justify-center shrink-0`}>
-            <span className="text-white text-[10px] font-semibold">{role !=="member" ? task.assignedTo?.name?.substring(0, 2).toUpperCase() : task.createdBy?.name?.substring(0, 2).toUpperCase()}</span>
+
+        {/* 🚀 UPDATED: Team Member Avatar */}
+        {displayUser?.name && (
+          <div
+            title={role === "member" ? `Assigned by: ${displayUser.name}` : `Assigned to: ${displayUser.name}`}
+            className={`w-8 h-8 bg-linear-to-br ${avatarColors[colorIdx]} rounded-full flex items-center justify-center shrink-0 shadow-sm ring-2 ring-white`}
+          >
+            <span className="text-white text-xs font-bold tracking-wide">
+              {displayUser.name.substring(0, 2).toUpperCase()}
+            </span>
           </div>
         )}
       </div>

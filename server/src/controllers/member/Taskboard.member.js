@@ -13,7 +13,7 @@ const getUserTasks = asyncHandler(async(req,res)=>{
     const tasks = await Task.find({
         assignedTo:userId,
         organisation:req.user?.organisation
-    }).select("title description priority tags status").populate("createdBy","name avatar")
+    }).select("title description priority tags project deadline status").populate("createdBy","name avatar").populate("project","title")
 
     const inProgress = tasks.filter((task)=>task.status==="in-progress");
     const todo = tasks.filter((task)=>task.status==="todo");
