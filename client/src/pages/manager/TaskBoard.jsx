@@ -1,6 +1,8 @@
 import { KanbanBoard } from "../../components/ui/KanbanBoard";
 import { Plus, Filter, X, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { getAllTasksForManager, getAllUsersOfOrg } from "../../services/manager.services";
 
 const ASSIGNEES = ["Emily Davis", "John Smith", "Lisa Wong", "David Miller", "Mike Chen"];
 const PRIORITIES = ["low", "medium", "high"];
@@ -23,9 +25,9 @@ const initialDone = [
 ];
 
 const TaskBoard = ()=> {
-  const [todo, setTodo] = useState(initialTodo);
-  const [inProgress, setInProgress] = useState(initialInProgress);
-  const [done, setDone] = useState(initialDone);
+  const [todo, setTodo] = useState([]);
+  const [inProgress, setInProgress] = useState([]);
+  const [done, setDone] = useState([]);
 
   const [showNewTask, setShowNewTask] = useState(false);
   const [defaultColumn, setDefaultColumn] = useState("todo");
@@ -36,6 +38,12 @@ const TaskBoard = ()=> {
   const [filterPriority, setFilterPriority] = useState("All");
   const [filterAssignee, setFilterAssignee] = useState("All");
 
+  const [members, setMembers] = useState([]);
+
+  useEffect(()=>{
+    getAllTasksData();
+  },[])
+
   const getAll = () => [
     ...todo.map((t) => ({ ...t, col: "todo" })),
     ...inProgress.map((t) => ({ ...t, col: "inProgress" })),
@@ -45,9 +53,37 @@ const TaskBoard = ()=> {
   const applyFilter = (tasks) =>
     tasks.filter((t) => {
       const matchPriority = filterPriority === "All" || t.priority === filterPriority;
-      const matchAssignee = filterAssignee === "All" || t.assignee === filterAssignee;
+      const matchAssignee = filterAssignee === "All" || t.assignedTo?._id === filterAssignee;
       return matchPriority && matchAssignee;
     });
+
+  const getAllTasksData = async() =>{
+    try {
+      const result = await getAllTasksForManager();
+      setTodo(result?.data?.todoTasks);
+      setInProgress(result?.data?.inProgressTasks)
+      setDone(result?.data?.doneTasks);
+    } catch (error) {
+      console.log(error.response?.data?.message);
+      toast.error(error.response?.data?.message);
+    }
+  }
+
+  const getTeamMemberData = async() =>{
+    try {
+      const result = await getAllUsersOfOrg();
+      setMembers(result?.data);
+
+    } catch (error) {
+      console.log(error.response?.data?.message)
+      toast.error(error.response?.data?.message)
+    }
+  }
+
+  const openFilter = async()=>{
+    if(!showFilter) getTeamMemberData();
+    setShowFilter(!showFilter);
+  }
 
   const handleTaskMove = (taskId, toColumn) => {
     const all = getAll();
@@ -103,8 +139,8 @@ const TaskBoard = ()=> {
         <div className="flex items-center gap-3">
           <div className="relative">
             <button
-              onClick={() => setShowFilter(!showFilter)}
-              className={`flex items-center gap-2 px-4 py-2 border rounded-xl transition-colors text-sm font-medium ${
+              onClick={openFilter}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl transition-colors text-sm select-none cursor-pointer font-medium ${
                 isFiltered ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
               }`}
             >
@@ -139,7 +175,7 @@ const TaskBoard = ()=> {
                     className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   >
                     <option value="All">All members</option>
-                    {ASSIGNEES.map((a) => <option key={a}>{a}</option>)}
+                    {members.map((member) => <option key={member._id} value={member._id}>{member.name}</option>)}
                   </select>
                 </div>
                 {isFiltered && (
@@ -155,7 +191,7 @@ const TaskBoard = ()=> {
           </div>
           <button
             onClick={() => { setShowNewTask(true); setNewTask((n) => ({ ...n, column: "todo" })); }}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium"
+            className="flex items-center select-none cursor-pointer gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
             New Task

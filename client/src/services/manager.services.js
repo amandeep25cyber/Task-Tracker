@@ -101,6 +101,15 @@ const createNewTaskByManager = async(data)=>{
     return res?.data;
 }
 
+const getAllTasksForManager = async() =>{
+
+    const res = await axios.get(`${API_URL}/manager/tasks`,{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getActiveProjects,
@@ -113,4 +122,5 @@ export {
     getProjectDataById,
     updateTaskStatus,
     createNewTaskByManager,
+    getAllTasksForManager,
 }
