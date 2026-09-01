@@ -295,13 +295,18 @@ const createNewTask = asyncHandler(async (req, res) => {
         tags: parsedTags,
         createdBy: req.user._id,
         deadline
-    });
+    })
+
+    const task = await Task.findById(newTask._id)
+    .select("title description deadline status tags priority")
+    .populate("project","title")
+    .populate("assignedTo","name avatar");
 
     existingProject.taskCount += 1;
     await existingProject.save();
 
     return res.status(201).json(
-        new ApiResponse(201, newTask, "Task created successfully")
+        new ApiResponse(201, task, "Task created successfully")
     );
 });
 

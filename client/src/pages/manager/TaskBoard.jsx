@@ -1,28 +1,22 @@
 import { KanbanBoard } from "../../components/ui/KanbanBoard";
-import { Plus, Filter, X, ChevronDown } from "lucide-react";
+import { Plus, Filter, X, ChevronDown, Projector } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { getAllTasksForManager, getAllUsersOfOrg } from "../../services/manager.services";
+import { createNewTaskByManager, getAllTasksForManager, getAllUsersOfOrg, getManagerProjects, updateTaskStatus } from "../../services/manager.services";
 
 const ASSIGNEES = ["Emily Davis", "John Smith", "Lisa Wong", "David Miller", "Mike Chen"];
 const PRIORITIES = ["low", "medium", "high"];
 
-const initialTodo = [
-  { id: "1", title: "Design landing page", description: "Create mockups for the new landing page", assignee: "Emily Davis", priority: "high", tags: ["Design", "UI"] },
-  { id: "2", title: "Setup CI/CD pipeline", description: "Configure automated deployment workflow", assignee: "John Smith", priority: "medium", tags: ["DevOps"] },
-  { id: "3", title: "Write API documentation", assignee: "Lisa Wong", priority: "low", tags: ["Documentation"] },
-];
-
-const initialInProgress = [
-  { id: "4", title: "Implement user authentication", description: "Add login and signup functionality", assignee: "John Smith", priority: "high", tags: ["Backend", "Security"] },
-  { id: "5", title: "Create dashboard components", assignee: "Emily Davis", priority: "medium", tags: ["Frontend"] },
-];
-
-const initialDone = [
-  { id: "6", title: "Database schema design", assignee: "Lisa Wong", priority: "high", tags: ["Database"] },
-  { id: "7", title: "Setup development environment", assignee: "John Smith", priority: "medium", tags: ["Setup"] },
-  { id: "8", title: "Initial project setup", assignee: "Emily Davis", priority: "low", tags: ["Setup"] },
-];
+const DEFAULT_TASK = { 
+  title: "", 
+  description: "", 
+  assignee: "", 
+  priority: "low", 
+  tags: "", 
+  column: "todo", 
+  project: "", 
+  deadline: "" 
+}
 
 const TaskBoard = ()=> {
   const [todo, setTodo] = useState([]);
@@ -33,15 +27,18 @@ const TaskBoard = ()=> {
   const [defaultColumn, setDefaultColumn] = useState("todo");
   const [showFilter, setShowFilter] = useState(false);
 
-  const [newTask, setNewTask] = useState({ title: "", description: "", assignee: "", priority: "medium", tags: "", column: "todo" });
+  const [newTask, setNewTask] = useState(DEFAULT_TASK);
 
   const [filterPriority, setFilterPriority] = useState("All");
   const [filterAssignee, setFilterAssignee] = useState("All");
 
   const [members, setMembers] = useState([]);
+  const [projects, setProjects] = useState([]);
 
   useEffect(()=>{
     getAllTasksData();
+    getProjectsData();
+    getTeamMemberData();
   },[])
 
   const getAll = () => [
@@ -80,19 +77,17 @@ const TaskBoard = ()=> {
     }
   }
 
-  const openFilter = async()=>{
-    if(!showFilter) getTeamMemberData();
-    setShowFilter(!showFilter);
-  }
-
   const handleTaskMove = (taskId, toColumn) => {
     const all = getAll();
-    const task = all.find((t) => t.id === taskId);
+    const task = all.find((t) => t._id === taskId);
     if (!task) return;
     const { col: fromCol, ...cleanTask } = task;
 
-    const remove = (arr) => arr.filter((t) => t.id !== taskId);
+    const remove = (arr) => arr.filter((t) => t._id !== taskId);
     const add = (arr) => [...arr, cleanTask];
+
+    //function call of status updation
+    updateTaskStatusByManager(toColumn,taskId);
 
     if (fromCol === "todo") setTodo(remove);
     else if (fromCol === "inProgress") setInProgress(remove);
@@ -103,26 +98,63 @@ const TaskBoard = ()=> {
     else setDone(add);
   };
 
+  const updateTaskStatusByManager = async(toColumn,taskId) =>{
+    try {
+      const status = toColumn ==="inProgress" ? "in-progress": toColumn;
+      await updateTaskStatus(status,taskId);
+      
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
+
+  const getProjectsData = async() =>{
+    try {
+      const result = await getManagerProjects();
+      setProjects(result?.data);
+
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
+
   const openAddTask = (col) => {
     setDefaultColumn(col);
     setNewTask((n) => ({ ...n, column: col }));
     setShowNewTask(true);
   };
 
-  const addTask = () => {
-    if (!newTask.title.trim()) return;
-    const task = {
-      id: `task-${Date.now()}`,
-      title: newTask.title,
-      description: newTask.description || undefined,
-      assignee: newTask.assignee || undefined,
-      priority: newTask.priority,
-      tags: newTask.tags ? newTask.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
-    };
-    if (newTask.column === "todo") setTodo((p) => [...p, task]);
-    else if (newTask.column === "inProgress") setInProgress((p) => [...p, task]);
-    else setDone((p) => [...p, task]);
-    setNewTask({ title: "", description: "", assignee: "", priority: "medium", tags: "", column: "todo" });
+  const addTask = async() => {
+    if (!newTask.title.trim() || !newTask.project.trim()) return;
+    try {
+      const result = await createNewTaskByManager({
+        title: newTask?.title,
+        description: newTask?.description,
+        priority: newTask?.priority,
+        assignedTo: newTask?.assignee,
+        tags: newTask?.tags,
+        status: newTask?.column === "inProgress" ? "in-progress": newTask?.column,
+        project: newTask?.project,
+        deadline: newTask?.deadline
+      });
+
+      if(newTask?.column==="todo"){
+        setTodo((prev)=>[...prev,result.data]);
+      }else if(newTask?.column==="done"){
+        setDone((prev)=>[...prev,result.data]);
+      }else{
+        setInProgress((prev)=>[...prev,result.data]);
+      }
+
+      toast.success("Task created!")
+
+    } catch (error) {
+      console.log(error.response?.data?.message)
+      toast.error(error.response?.data?.message)
+    }
+    setNewTask(DEFAULT_TASK);
     setShowNewTask(false);
   };
 
@@ -139,7 +171,7 @@ const TaskBoard = ()=> {
         <div className="flex items-center gap-3">
           <div className="relative">
             <button
-              onClick={openFilter}
+              onClick={()=> setShowFilter(!showFilter)}
               className={`flex items-center gap-2 px-4 py-2 border rounded-xl transition-colors text-sm select-none cursor-pointer font-medium ${
                 isFiltered ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
               }`}
@@ -271,7 +303,9 @@ const TaskBoard = ()=> {
                   </select>
                 </div>
               </div>
-              <div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1.5">Assignee</label>
                 <select
                   value={newTask.assignee}
@@ -279,9 +313,31 @@ const TaskBoard = ()=> {
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
                 >
                   <option value="">Unassigned</option>
-                  {ASSIGNEES.map((a) => <option key={a}>{a}</option>)}
+                  {members.map((member) => <option key={member._id} value={member._id}>{member.name}</option>)}
                 </select>
               </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1.5">Deadline</label>
+                  <input
+                    value={newTask.deadline}
+                    onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
+                    type="date"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                  />
+                </div>
+              </div>
+              <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1.5">Project</label>
+                  <select
+                    value={newTask.project}
+                    onChange={(e) => setNewTask({ ...newTask, project: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                  >
+                    <option value="">Select Project</option>
+                    {projects.map((project) => <option key={project._id} value={project._id}>{project.title}</option>)}
+                  </select>
+                </div>
+              
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1.5">Tags <span className="text-gray-400 font-normal">(comma-separated)</span></label>
                 <input

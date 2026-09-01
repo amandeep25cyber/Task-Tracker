@@ -42,14 +42,6 @@ const MyTasks = ()=> {
     const remove = (arr) => arr.filter((t) => t._id !== taskId);
     const add = (arr) => [...arr, task];
 
-    if (fromCol === "todo") setTodo(remove);
-    else if (fromCol === "inProgress") setInProgress(remove); 
-    else setDone(remove);
-
-    if (toColumn === "todo") setTodo(add); 
-    else if (toColumn === "inProgress") setInProgress(add); 
-    else setDone(add);
-
     try {
       const status = toColumn ==="inProgress" ? "in-progress": toColumn;
       const updatedTask = await updateLogtimeAndStatus({hours:"",status,taskId})
@@ -58,6 +50,15 @@ const MyTasks = ()=> {
       toast.error(error?.response?.data?.message);
       console.log(error?.response?.data?.message);
     }
+
+    if (fromCol === "todo") setTodo(remove);
+    else if (fromCol === "inProgress") setInProgress(remove); 
+    else setDone(remove);
+
+    if (toColumn === "todo") setTodo(add); 
+    else if (toColumn === "inProgress") setInProgress(add); 
+    else setDone(add);
+
   };
 
   return (
