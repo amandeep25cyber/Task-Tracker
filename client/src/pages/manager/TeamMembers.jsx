@@ -1,35 +1,53 @@
 import { Search, X} from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { toast } from "react-toastify";
 import TeamMemberCard from "../../components/ui/TeamMemberCard";
-
-const initialMembers = [
-  { _id: 1, name: "Emily Davis", projects:["Website Redsign","client restructue"], role: "Senior Frontend Developer", email: "emily.d@company.com", tasks: { active: 5, completed: 42 }, status: "online", avatar: "ED" },
-  { _id: 2, name: "John Smith", projects:["Website Redsign","client 2.0"], role: "Backend Developer", email: "john.s@company.com", tasks: { active: 3, completed: 38 }, status: "online", avatar: "JS" },
-  { _id: 3, name: "Lisa Wong", projects:["Website Redsign","client 2.0"], role: "Full Stack Developer", email: "lisa.w@company.com", tasks: { active: 4, completed: 45 }, status: "away", avatar: "LW" },
-  { _id: 4, name: "David Miller", projects:["Website Redsign","client 2.0"], role: "DevOps Engineer", email: "david.m@company.com", tasks: { active: 2, completed: 31 }, status: "offline", avatar: "DM" },
-  { _id: 5, name: "Sofia Reyes", projects:["Website Redsign","client 2.0"], role: "QA Engineer", email: "sofia.r@company.com", tasks: { active: 6, completed: 27 }, status: "online", avatar: "SR" },
-];
-
-const ROLES = ["Frontend Developer", "Backend Developer", "Full Stack Developer", "DevOps Engineer", "QA Engineer", "Designer", "Senior Frontend Developer", "Senior Backend Developer"];
+import { getTeamUsers, updateUsersJobRole } from "../../services/manager.services";
 
 const TeamMembers = () => {
-  const [members, setMembers] = useState(initialMembers);
+  const [members, setMembers] = useState([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("All");
-  const menuRef = useRef(null);
 
-  useEffect(() => {
-    const handler = (e) => { if (!menuRef.current?.contains(e.target)) setOpenMenu(null); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  useEffect(()=>{
+    getTeamMembersData();
+  },[]);
 
-  const uniqueRoles = ["All", ...Array.from(new Set(members.map((m) => m.role)))];
+  const getTeamMembersData = async() =>{
+    try {
+      const result = await getTeamUsers();
+      setMembers(result?.data);
+
+    } catch (error) {
+      console.log(error.response?.data?.message);
+      toast.error(error.response?.data?.message);
+    }
+  }
+
+  const updateJobRole = async(jobRole,id,setShowModal,setJobRole) =>{
+    try {
+      await updateUsersJobRole(id,jobRole);
+      setMembers((prevMembers) => 
+        prevMembers.map((member) =>
+          member._id === id ? { ...member, jobRole: jobRole } : member
+      ));
+      setShowModal(false);
+      toast.success("Role updated!")
+      setJobRole("Trainee");
+
+    } catch (error) {
+      toast.error(error.response?.data?.message)
+      console.log(error.response?.data?.message)
+    }
+  }
+
+
+  const uniqueRoles = ["All", ...Array.from(new Set(members.map((m) => m.jobRole)))];
 
   const filtered = members.filter((m) => {
     const q = search.toLowerCase();
-    const matchesSearch = !search || m.name.toLowerCase().includes(q) || m.role.toLowerCase().includes(q) || m.email.toLowerCase().includes(q);
-    const matchesRole = roleFilter === "All" || m.role === roleFilter;
+    const matchesSearch = !search || m.name.toLowerCase().includes(q) || m.jobRole?.toLowerCase().includes(q) || m.email.toLowerCase().includes(q);
+    const matchesRole = roleFilter === "All" || m.jobRole === roleFilter;
     return matchesSearch && matchesRole;
   });
 
@@ -47,15 +65,15 @@ const TeamMembers = () => {
           {search && <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400"><X className="w-3.5 h-3.5" /></button>}
         </div>
         <div className="flex bg-gray-100 rounded-xl p-1 overflow-x-auto">
-          {uniqueRoles.slice(0, 5).map((r) => (
-            <button key={r} onClick={() => setRoleFilter(r)} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${roleFilter === r ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>{r}</button>
+          {uniqueRoles.slice(0, 5).map((r,idx) => (
+            <button key={idx} onClick={() => setRoleFilter(r)} className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${roleFilter === r ? "bg-white shadow-sm text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>{r}</button>
           ))}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-        {filtered.map((member) => (
-          <TeamMemberCard member={member} key={member._id}/>
+        {filtered.map((member,idx) => (
+          <TeamMemberCard member={member} updateJobRole={updateJobRole} key={member._id || idx}/>
         ))}
       </div>
 

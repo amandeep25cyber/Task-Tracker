@@ -110,6 +110,24 @@ const getAllTasksForManager = async() =>{
     return res?.data;
 }
 
+const getTeamUsers = async() =>{
+
+    const res = await axios.get(`${API_URL}/manager/team-members`,{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
+const updateUsersJobRole = async(id,jobRole)=>{
+
+    const res = await axios.put(`${API_URL}/manager/team-member/role/${id}`,{jobRole},{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getActiveProjects,
@@ -123,4 +141,6 @@ export {
     updateTaskStatus,
     createNewTaskByManager,
     getAllTasksForManager,
+    getTeamUsers,
+    updateUsersJobRole,
 }

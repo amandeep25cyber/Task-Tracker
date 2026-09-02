@@ -4,7 +4,7 @@ import { isManager } from "../middlewares/isManager.js";
 import { dashboardActiveProjects, dashboardStats, dashboardUpcomingDeadlines } from "../controllers/manager/dashboard.manager.js";
 import { createNewProject, createNewTask, deleteManagerProject, getAllUsers, getProject, managerProjects, updateExistedProject, updateTaskStatusById } from "../controllers/manager/projects.manager.js";
 import { getManagerProjectsAllTasks } from "../controllers/manager/taskBoard.manager.controllers.js";
-import { getUsersData } from "../controllers/manager/teamMember.manager.controllers.js";
+import { getUsersData, updateJobRole } from "../controllers/manager/teamMember.manager.controllers.js";
 
 const router = Router();
 
@@ -21,5 +21,6 @@ router.route('/task/:taskId').put(verifyUser,isManager,updateTaskStatusById);
 router.route('/task').post(verifyUser,isManager,createNewTask);
 router.route('/tasks').get(verifyUser,isManager,getManagerProjectsAllTasks);
 router.route('/team-members').get(verifyUser,isManager,getUsersData);
+router.route('/team-member/role/:userId').put(verifyUser,isManager,updateJobRole);
 
 export default router;

@@ -55,6 +55,21 @@ const getUsersData = asyncHandler(async (req,res)=>{
                 updatedAt: { $gte: thirtyDaysAgo } 
             });
 
+            const startOfWeek = new Date();
+            const currentDay = startOfWeek.getDay();
+            
+            const diff = startOfWeek.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
+            
+            startOfWeek.setDate(diff);
+            startOfWeek.setHours(0, 0, 0, 0);
+
+            const completedThisWeek = await Task.countDocuments({
+                assignedTo: user._id,
+                organisation: orgId,
+                status: "done",
+                updatedAt: { $gte: startOfWeek } 
+            });
+
             const projects = await Project.find({
                 organisation: orgId,
                 $or: [
@@ -68,6 +83,7 @@ const getUsersData = asyncHandler(async (req,res)=>{
                 ...user,
                 activeTasks,
                 completedLast30Days,
+                completedThisWeek,
                 projects
             }
         })
@@ -80,6 +96,28 @@ const getUsersData = asyncHandler(async (req,res)=>{
     )
 })
 
+const updateJobRole = asyncHandler(async(req,res)=>{
+  
+    const { userId } = req.params;
+    const { jobRole } = req.body;
+
+    const user = await User.findOneAndUpdate(
+        { 
+            _id: userId,
+            organisation: req.user?.organisation
+        },
+        { $set: { "jobRole": jobRole}},
+        { new: true}
+    )
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200,{ jobRole: user.jobRole, _id: user._id }, "Job Role Updated Successfully")
+    )
+})
+
 export {
     getUsersData,
+    updateJobRole,
 }
