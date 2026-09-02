@@ -1,0 +1,85 @@
+import { Project } from "../../models/project.models.js";
+import { User } from "../../models/user.models.js";
+import { Task } from "../../models/task.models.js"
+import { asyncHandler } from "../../utils/AsyncHandler.js";
+import { ApiResponse } from "../../utils/ApiResponse.js"
+
+const getUsersData = asyncHandler(async (req,res)=>{
+    const userId = req.user._id;
+    const orgId = req.user.organisation;
+
+    const projects = await Project.find({
+        $or:[
+            { createdBy: userId },
+            { members: userId }
+        ],
+        organisation: orgId
+    })
+
+    const uniqueMembers = new Set();
+
+    projects.forEach(project => {
+
+        uniqueMembers.add(project.createdBy.toString());
+        if (project.members && project.members.length > 0) {
+            project.members.forEach(memberId => uniqueMembers.add(memberId.toString()));
+        }
+    });
+
+    const users = await User.find({
+        organisation: orgId,
+        _id: { 
+            $in: [...uniqueMembers],
+            $ne: userId
+        },
+        role: { $in:[ "manager","member"]}
+    })
+    .select("name avatar email role status jobRole")
+    .lean();
+
+    const updatedFieldUser = await Promise.all(
+        users.map(async(user)=>{
+            const activeTasks = await Task.countDocuments({
+                organisation: orgId,
+                assignedTo: user._id,
+                status: { $in: ["todo","in-progress"]}
+            })
+
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const completedLast30Days = await Task.countDocuments({
+                assignedTo: user._id,
+                organisation: orgId,
+                status: "done",
+                updatedAt: { $gte: thirtyDaysAgo } 
+            });
+
+            const projects = await Project.find({
+                organisation: orgId,
+                $or: [
+                    { createdBy: user._id },
+                    { members: user._id }
+                ],
+                status: { $ne: "Completed"}
+            }).select("title status");
+
+            return {
+                ...user,
+                activeTasks,
+                completedLast30Days,
+                projects
+            }
+        })
+    )
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200,updatedFieldUser,"User's data is fetched successfully")
+    )
+})
+
+export {
+    getUsersData,
+}
