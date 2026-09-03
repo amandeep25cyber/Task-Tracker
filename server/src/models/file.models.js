@@ -32,11 +32,24 @@ const fileSchema = new mongoose.Schema(
 
     fileType: {
       type: String,
+      enum: ['design', 'document', 'spreadsheet', 'image'],
+      default: "document"
     },
 
     size: {
       type: Number,
     },
+
+    publicId: {
+      type: String,
+      required: true,
+    },
+
+    resourceType: {
+      type: String,
+      required: true,
+    }
+    
   },
   { timestamps: true },
 );

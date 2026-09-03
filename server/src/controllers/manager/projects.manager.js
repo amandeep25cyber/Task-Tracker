@@ -4,6 +4,9 @@ import { Task } from "../../models/task.models.js"
 import { ApiResponse } from "../../utils/ApiResponse.js"
 import { ApiError } from "../../utils/ApiError.js"
 import { User } from "../../models/user.models.js"
+import fs from "fs";
+import { deleteFromCloudinary, uploadOnCloudinary } from "../../utils/cloudinary.js";
+import { File } from "../../models/file.models.js"
 
 const managerProjects = asyncHandler(async(req,res)=>{
     
@@ -310,6 +313,61 @@ const createNewTask = asyncHandler(async (req, res) => {
     );
 });
 
+const uploadFileController = asyncHandler(async(req,res)=>{
+    // (project,organisation,uploadedBy,fileName,fileUrl,fileType,size,publicId)Modal requirement
+    const { project, fileName, fileType } = req.body;
+    const uploadedBy = req.user._id;
+    const orgId = req.user.organisation;
+
+    const filePathName = req.file?.path;
+    const size = req.file?.size;
+
+    if(!filePathName){
+        throw new ApiError(400,"File is Missing.")
+    }
+
+    if(!project || !fileName){
+        fs.unlinkSync(filePathName);
+        throw new ApiError(401,"Project ID and File name is must.");
+    }
+
+    const allowedCategories = ['design', 'document', 'spreadsheet', 'image'];
+    if (!allowedCategories.includes(fileType)) {
+        fs.unlinkSync(filePathName);
+        throw new ApiError(400,"Invalid file category selected")
+    }
+
+    const response = await uploadOnCloudinary(filePathName);
+
+    if(!response){
+        throw new ApiError(500,"Something went wrong while uploading to Cloudinary.")
+    }
+
+    const file = await File.create({
+        organisation: orgId,
+        project,
+        uploadedBy,
+        fileName,
+        fileType,
+        fileUrl: response?.secure_url || "",
+        size,
+        publicId: response?.public_id,
+        resourceType: response?.resource_type || "image"
+    })
+
+    if(!file){
+        await deleteFromCloudinary( response?.public_id, response?.resource_type);
+        throw new ApiError(500,"Something went wrong with database.");
+    }
+
+    res
+    .status(201)
+    .json(
+        new ApiResponse(201,file,"File uploaded")
+    )
+
+})
+
 export {
     managerProjects,
     getAllUsers,
@@ -319,5 +377,6 @@ export {
     getProject,
     updateTaskStatusById,
     createNewTask,
+    uploadFileController,
 }
 
