@@ -368,6 +368,26 @@ const uploadFileController = asyncHandler(async(req,res)=>{
 
 })
 
+const getProjectFilesController = asyncHandler(async(req,res)=>{
+    
+    const orgId = req.user?.organisation;
+    const project = req.params?.projectId;
+
+    const files = await File.find({
+        project,
+        organisation: orgId
+    })
+    .select("fileName fileUrl fileType createdAt size")
+    .populate("uploadedBy","name avatar")
+    .lean();
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse( 200, files, "Fetched Successfully")
+    )
+})
+
 export {
     managerProjects,
     getAllUsers,
@@ -378,5 +398,6 @@ export {
     updateTaskStatusById,
     createNewTask,
     uploadFileController,
+    getProjectFilesController,
 }
 

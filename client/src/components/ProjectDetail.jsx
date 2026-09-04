@@ -5,7 +5,9 @@ import { useState, useRef, useEffect } from "react";
 import { KanbanBoard } from "./ui/KanbanBoard";
 import { toast } from "react-toastify";
 import { createNewTask, getSingleProject, taskStatusUpdate } from "../services/organisation.services";
-import { createNewTaskByManager, getProjectDataById, updateTaskStatus, uploadFile } from "../services/manager.services";
+import { createNewTaskByManager, getProjectDataById, getProjectFiles, updateTaskStatus, uploadFile } from "../services/manager.services";
+import { getRelativeTime } from "../hooks/relativeTime";
+import { formatBytes } from "../hooks/parseBytesData";
 
 const typeIcon = {
   design: Image,
@@ -103,15 +105,16 @@ const ProjectDetail = ({ role }) => {
 
   useEffect(()=>{
     getProjectData();
+    getProjectFilesData();
   },[])
 
   const filtered = files.filter((f) => {
-    const matchSearch = f.name.toLowerCase().includes(search.toLowerCase()) || f.author.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = f.uploadedBy?.name?.toLowerCase().includes(search.toLowerCase()) || f.fileName?.toLowerCase().includes(search.toLowerCase());
     const matchType = typeFilter === "All Files" ||
-      (typeFilter === "Documents" && f.type === "document") ||
-      (typeFilter === "Images" && (f.type === "image" || f.type === "design")) ||
-      (typeFilter === "Spreadsheets" && f.type === "spreadsheet") ||
-      (typeFilter === "Design Files" && f.type === "design");
+      (typeFilter === "Documents" && f.fileType === "document") ||
+      (typeFilter === "Images" && (f.fileType === "image" || f.type === "design")) ||
+      (typeFilter === "Spreadsheets" && f.fileType === "spreadsheet") ||
+      (typeFilter === "Design Files" && f.fileType === "design");
     return matchSearch && matchType;
   });
 
@@ -139,6 +142,18 @@ const ProjectDetail = ({ role }) => {
       })
 
       setTasks(tasksData);
+
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
+
+  const getProjectFilesData = async ()=>{
+    try {
+
+      const response = await getProjectFiles(id);
+      setFiles(response?.data);
 
     } catch (error) {
       toast.error(error?.response?.data?.message);
@@ -521,25 +536,25 @@ const ProjectDetail = ({ role }) => {
                     </div>
                   ) : viewMode === "grid" ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                        {filtered.map((file) => {
-                          const Icon = typeIcon[file.type];
+                        {filtered.map((file, idx) => {
+                          const Icon = typeIcon[file.fileType];
                           return (
                             <div
-                              key={file.id}
+                              key={file._id || idx}
                               className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
                             >
                               <div className="flex items-start justify-between mb-3">
-                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${typeColor[file.type]}`}>
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${typeColor[file.fileType]}`}>
                                   <Icon className="w-6 h-6" />
                                 </div>
                                 <div className="relative">
                                   <button
-                                    onClick={() => setShowActions(showActions === file.id ? null : file.id)}
+                                    onClick={() => setShowActions(showActions === file._id ? null : file._id)}
                                     className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                                   >
                                     <MoreVertical className="w-4 h-4 text-gray-600" />
                                   </button>
-                                  {showActions === file.id && (
+                                  {showActions === file._id && (
                                     <div className="absolute right-0 mt-1 w-40 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-10">
                                       <button
                                         onClick={() => { setShowActions(null); showToast("Download started"); }}
@@ -557,7 +572,7 @@ const ProjectDetail = ({ role }) => {
                                         <>
                                           <div className="my-1 border-t border-gray-100" />
                                           <button
-                                            onClick={() => deleteFile(file.id)}
+                                            onClick={() => deleteFile(file._id)}
                                             className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                           >
                                             <Trash2 className="w-4 h-4" /> Delete
@@ -568,13 +583,13 @@ const ProjectDetail = ({ role }) => {
                                   )}
                                 </div>
                               </div>
-                              <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">{file.name}</h4>
-                              <p className="text-xs text-gray-500 mb-2">{file.size}</p>
+                              <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">{file.fileName}</h4>
+                              <p className="text-xs text-gray-500 mb-2">{ formatBytes(file.size) }</p>
                               <div className="flex items-center gap-2 text-xs text-gray-400">
                                 <div className="w-4 h-4 bg-linear-to-br from-blue-500 to-violet-500 rounded-full flex items-center justify-center">
-                                  <span className="text-white text-[7px] font-bold">{file.author.substring(0, 2).toUpperCase()}</span>
+                                  <span className="text-white text-[7px] font-bold">{file.uploadedBy?.name?.substring(0, 2).toUpperCase()}</span>
                                 </div>
-                                  {file.modified}
+                                  { getRelativeTime(file.createdAt) }
                               </div>
                             </div>
                           );
@@ -582,19 +597,19 @@ const ProjectDetail = ({ role }) => {
                       </div>
                     ) : (
                       <div className="space-y-1">
-                        {filtered.map((file) => {
-                          const Icon = typeIcon[file.type];
+                        {filtered.map((file, idx) => {
+                          const Icon = typeIcon[file.fileType];
                           return (
-                            <div key={file.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group">
-                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${typeColor[file.type]}`}>
+                            <div key={file._id || idx} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${typeColor[file.fileType]}`}>
                                 <Icon className="w-4 h-4" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-gray-900 text-sm truncate">{file.name}</p>
-                                <p className="text-xs text-gray-500">{file.author} · {file.modified}</p>
+                                <p className="font-medium text-gray-900 text-sm truncate">{file.fileName}</p>
+                                <p className="text-xs text-gray-500">{file.uploadedBy?.name} · { getRelativeTime(file.createdAt) }</p>
                               </div>
-                              <span className="text-xs text-gray-400 hidden sm:block">{typeLabels[file.type]}</span>
-                              <span className="text-sm text-gray-500 w-16 text-right">{file.size}</span>
+                              <span className="text-xs text-gray-400 hidden sm:block">{typeLabels[file.fileType]}</span>
+                              <span className="text-sm text-gray-500 w-16 text-right">{ formatBytes(file.size) }</span>
                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <button
                                   onClick={() => showToast("Download started")}
@@ -610,7 +625,7 @@ const ProjectDetail = ({ role }) => {
                                 </button>
                                 {(role === "admin" || role === "manager") && (
                                   <button
-                                    onClick={() => deleteFile(file.id)}
+                                    onClick={() => deleteFile(file._id)}
                                     className="p-1.5 hover:bg-red-100 rounded-lg transition-colors"
                                   >
                                     <Trash2 className="w-4 h-4 text-red-500" />

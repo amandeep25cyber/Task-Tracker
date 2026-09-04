@@ -130,11 +130,20 @@ const updateUsersJobRole = async(id,jobRole)=>{
 
 const uploadFile = async(data) =>{
 
-    const res = await axios.post(`${API_URL}/manager/upload-file`,data,{
+    const res = await axios.post(`${API_URL}/manager/file`,data,{
         withCredentials: true,
         headers: {
             "Content-Type": "multipart/form-data"
         }
+    })
+
+    return res?.data;
+}
+
+const getProjectFiles = async(id) =>{
+
+    const res = await axios.get(`${API_URL}/manager/files/${id}`,{
+        withCredentials: true,
     })
 
     return res?.data;
@@ -156,4 +165,5 @@ export {
     getTeamUsers,
     updateUsersJobRole,
     uploadFile,
+    getProjectFiles,
 }

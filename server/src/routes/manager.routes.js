@@ -2,7 +2,7 @@ import { Router } from "express";
 import { verifyUser } from "../middlewares/verifyJWT.js";
 import { isManager } from "../middlewares/isManager.js";
 import { dashboardActiveProjects, dashboardStats, dashboardUpcomingDeadlines } from "../controllers/manager/dashboard.manager.js";
-import { createNewProject, createNewTask, deleteManagerProject, getAllUsers, getProject, managerProjects, updateExistedProject, updateTaskStatusById, uploadFileController } from "../controllers/manager/projects.manager.js";
+import { createNewProject, createNewTask, deleteManagerProject, getAllUsers, getProject, getProjectFilesController, managerProjects, updateExistedProject, updateTaskStatusById, uploadFileController } from "../controllers/manager/projects.manager.js";
 import { getManagerProjectsAllTasks } from "../controllers/manager/taskBoard.manager.controllers.js";
 import { getUsersData, updateJobRole } from "../controllers/manager/teamMember.manager.controllers.js";
 import { upload } from "../middlewares/multer.middlewares.js"
@@ -23,6 +23,7 @@ router.route('/task').post(verifyUser,isManager,createNewTask);
 router.route('/tasks').get(verifyUser,isManager,getManagerProjectsAllTasks);
 router.route('/team-members').get(verifyUser,isManager,getUsersData);
 router.route('/team-member/role/:userId').put(verifyUser,isManager,updateJobRole);
-router.route("/upload-file").post(verifyUser,isManager,upload.single("file"),uploadFileController);
+router.route("/file").post(verifyUser,isManager,upload.single("file"),uploadFileController);
+router.route('/files/:projectId').get(verifyUser,isManager,getProjectFilesController);
 
 export default router;
