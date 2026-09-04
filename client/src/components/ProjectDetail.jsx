@@ -1,12 +1,11 @@
 import { Card } from "./ui/Card";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Calendar, MessageSquare, FileText, CheckSquare, Settings, Send, Download, Share2, Plus, X } from "lucide-react";
+import { ArrowLeft, Upload, MessageSquare, FileText, CheckSquare, Settings, Send, Download, Share2, Plus, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { KanbanBoard } from "./ui/KanbanBoard";
-import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { createNewTask, getSingleProject, taskStatusUpdate } from "../services/organisation.services";
-import { createNewTaskByManager, getProjectDataById, updateTaskStatus } from "../services/manager.services";
+import { createNewTaskByManager, getProjectDataById, updateTaskStatus, uploadFile } from "../services/manager.services";
 
 const tabs = [
   { id: "overview", label: "Overview", icon: CheckSquare },
@@ -67,6 +66,12 @@ const ProjectDetail = ({ role }) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [projectData,setProjectData] = useState(DEFAULT_PROJECT);
   const [showNewTask,setShowNewTask] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [fileName, setFileName] = useState("");
+  const [fileType, setFileType] = useState("document");
+  const [file, setFile] = useState(null)
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [newTask,setNewTask] = useState(DEFAULT_TASK);
   const basePath = `/${role}`;
 
@@ -141,6 +146,50 @@ const ProjectDetail = ({ role }) => {
       return false;
     }
   }
+
+  const addFile = async() =>{
+    try {
+      setIsUploading(true);
+      const formData = new FormData()
+      formData.append("file", file);
+      formData.append("fileName", fileName);
+      formData.append("fileType", fileType);
+      formData.append("project", id);
+
+      await uploadFile( formData );
+      setShowUpload(false);
+      setIsUploading(false);
+      setFile(null);
+      setFileName("");
+      setFileType("document");
+      toast.success("File uploaded successfullly");
+
+    } catch (error) {
+      console.log(error.response?.data?.message);
+      toast.error(error.response?.data?.message);
+      setIsUploading(false);
+    }
+  }
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setFile(e.dataTransfer.files[0]);
+      console.log(e.dataTransfer.files);
+    }
+  };
 
   const addTask = async() =>{
     try {
@@ -371,7 +420,9 @@ const ProjectDetail = ({ role }) => {
               <div className="flex items-center justify-between mb-5">
                 <h3 className="font-semibold text-gray-900">Project Files</h3>
                 {(role === "admin" || role === "manager") && (
-                  <button className="flex items-center gap-2 text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                  <button
+                  onClick={()=> setShowUpload(true)}
+                  className="flex items-center gap-2 text-sm bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-colors font-medium">
                     <Plus className="w-4 h-4" /> Upload
                   </button>
                 )}
@@ -401,6 +452,88 @@ const ProjectDetail = ({ role }) => {
           )}
         </div>
       </Card>
+
+      {/* Upload new file */}
+      {showUpload && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-semibold text-gray-900">Upload File</h3>
+              <button onClick={() => setShowUpload(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <label 
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`block border-2 border-dashed select-none rounded-xl p-8 text-center transition-colors cursor-pointer 
+                  ${isDragging 
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 bg-gray-50 hover:border-blue-400"
+                  }`}
+              >
+                <input 
+                  type="file" 
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      setFile(e.target.files[0]);
+                    }
+                  }} 
+                />
+
+                <Upload className={`w-8 h-8 mx-auto mb-2 ${isDragging ? "text-blue-500" : "text-gray-400"}`} />
+      
+                <p className="text-sm font-medium text-gray-700">
+                  {file ? file.name : "Click to browse or drag file here"}
+                </p>
+      
+                <p className="text-xs text-gray-400 mt-1">Max 50 MB per file</p>
+              </label>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">File Name</label>
+                <input
+                  autoFocus
+                  value={fileName}
+                  onChange={(e) => setFileName(e.target.value)}
+                  placeholder="filename.ext"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1.5">File Type</label>
+                <select
+                  value={fileType}
+                  onChange={(e) => setFileType(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"
+                >
+                  <option value="document">Document</option>
+                  <option value="design">Design File</option>
+                  <option value="image">Image</option>
+                  <option value="spreadsheet">Spreadsheet</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowUpload(false)}
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addFile}
+                disabled={!fileName.trim() || !file}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-40"
+              >
+                {isUploading ? "Uploading...": "Upload"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Adding Task Form */}
       {showNewTask && (

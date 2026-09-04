@@ -128,6 +128,18 @@ const updateUsersJobRole = async(id,jobRole)=>{
     return res?.data;
 }
 
+const uploadFile = async(data) =>{
+
+    const res = await axios.post(`${API_URL}/manager/upload-file`,data,{
+        withCredentials: true,
+        headers: {
+            "Content-Type": "multipart/form-data"
+        }
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getActiveProjects,
@@ -143,4 +155,5 @@ export {
     getAllTasksForManager,
     getTeamUsers,
     updateUsersJobRole,
+    uploadFile,
 }
