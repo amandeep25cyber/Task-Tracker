@@ -388,6 +388,37 @@ const getProjectFilesController = asyncHandler(async(req,res)=>{
     )
 })
 
+const deleteProjectFile = asyncHandler(async(req,res)=>{
+    const { fileId } = req.params;
+    const managerId = req.user?._id;
+
+    const file = await File.findById(fileId).populate("project").select("resourceType project publicId");
+
+    if(!file){
+        throw new ApiError(404,"File doesn't exists!");
+    }
+
+    const isValidPersonToDelete = file.project?.members?.includes(managerId.toString()) || file.project?.createdBy?.toString() === managerId.toString();
+
+    if(!isValidPersonToDelete){
+        throw new ApiError(403,"You are not allowed to delete.")
+    }
+
+    await deleteFromCloudinary(file.publicId, file.resourceType || "image");
+
+    const deletedFile = await File.findByIdAndDelete(fileId);
+
+    if(!deletedFile){
+        throw new ApiError(500,"Something went wrong while deleting file from database.")
+    }
+
+    res
+    .status(200)
+    .json(
+        new ApiResponse(200, {}, "File deleted successfully!")
+    )
+})
+
 export {
     managerProjects,
     getAllUsers,
@@ -399,5 +430,6 @@ export {
     createNewTask,
     uploadFileController,
     getProjectFilesController,
+    deleteProjectFile,
 }
 

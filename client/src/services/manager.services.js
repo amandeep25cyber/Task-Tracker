@@ -149,6 +149,15 @@ const getProjectFiles = async(id) =>{
     return res?.data;
 }
 
+const deleteProjectFileById = async(id)=>{
+
+    const res = await axios.delete(`${API_URL}/manager/file/${id}`,{
+        withCredentials: true
+    })
+
+    return res?.data;
+}
+
 export {
     getDashboardStats,
     getActiveProjects,
@@ -166,4 +175,5 @@ export {
     updateUsersJobRole,
     uploadFile,
     getProjectFiles,
+    deleteProjectFileById,
 }

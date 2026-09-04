@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { KanbanBoard } from "./ui/KanbanBoard";
 import { toast } from "react-toastify";
 import { createNewTask, getSingleProject, taskStatusUpdate } from "../services/organisation.services";
-import { createNewTaskByManager, getProjectDataById, getProjectFiles, updateTaskStatus, uploadFile } from "../services/manager.services";
+import { createNewTaskByManager, deleteProjectFileById, getProjectDataById, getProjectFiles, updateTaskStatus, uploadFile } from "../services/manager.services";
 import { getRelativeTime } from "../hooks/relativeTime";
 import { formatBytes } from "../hooks/parseBytesData";
 
@@ -49,13 +49,6 @@ const seedChat = [
   { id: 3, user: "You", avatar: "ME", text: "The hero animation looks smooth, nice work.", time: "9:30 AM", isOwn: true },
 ];
 
-const projectFiles = [
-  { id: 1, name: "Homepage Design.fig", size: "2.4 MB", author: "Emily Davis", modified: "2 hours ago", type: "design" },
-  { id: 2, name: "Project Brief.pdf", size: "856 KB", author: "Mike Chen", modified: "1 day ago", type: "document" },
-  { id: 3, name: "Wireframes.sketch", size: "3.2 MB", author: "Emily Davis", modified: "2 days ago", type: "design" },
-  { id: 4, name: "Component Specs.docx", size: "1.1 MB", author: "John Smith", modified: "3 days ago", type: "document" },
-];
-
 function now() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
@@ -86,7 +79,7 @@ const DEFAULT_TASK = {
 
 const ProjectDetail = ({ role }) => {
   const { id } = useParams();
-  const [files, setFiles] = useState(projectFiles);
+  const [files, setFiles] = useState([]);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("All Files");
   const [showActions, setShowActions] = useState(null);
@@ -149,6 +142,20 @@ const ProjectDetail = ({ role }) => {
     }
   }
 
+  const handleFileDelete = async(id) =>{
+    try {
+      await deleteProjectFileById(id);
+      setFiles((prevFiles)=>
+        prevFiles.filter(file=>file._id !== id)
+      );
+      toast.success("File deleted successfully!");
+
+    } catch (error) {
+      toast.error(error?.response?.data?.message);
+      console.log(error?.response?.data?.message);
+    }
+  }
+
   const getFileDownloadUrl = (url,fileName) =>{
     if(!url) return "";
     const replacedValue = "/upload/";
@@ -158,6 +165,17 @@ const ProjectDetail = ({ role }) => {
 
     return url.replace(replacedValue,`${replacedValue}fl_attachment${safeFileName? `:${safeFileName}/` :"/"}`);
   }
+
+  const handleShare = async (fileUrl) => {
+    try {
+        await navigator.clipboard.writeText(fileUrl);
+        
+        toast.success("Link copied to clipboard!"); 
+    } catch (error) {
+        console.error("Failed to copy:", error);
+        toast.error("Failed to copy link");
+    }
+};
 
   const getProjectFilesData = async ()=>{
     try {
@@ -574,7 +592,7 @@ const ProjectDetail = ({ role }) => {
                                         <Download className="w-4 h-4" /> Download
                                       </a>
                                       <button
-                                        onClick={() => { setShowActions(null); showToast("Link copied!"); }}
+                                        onClick={() => { setShowActions(null); handleShare(file.fileUrl); }}
                                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                       >
                                         <Share2 className="w-4 h-4" /> Share
@@ -583,7 +601,7 @@ const ProjectDetail = ({ role }) => {
                                         <>
                                           <div className="my-1 border-t border-gray-100" />
                                           <button
-                                            onClick={() => deleteFile(file._id)}
+                                            onClick={() =>{ handleFileDelete(file._id); setShowActions(null);}}
                                             className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                                           >
                                             <Trash2 className="w-4 h-4" /> Delete
@@ -631,14 +649,14 @@ const ProjectDetail = ({ role }) => {
                                   <Download className="w-4 h-4 text-gray-600" />
                                 </a>
                                 <button
-                                  onClick={() => showToast("Link copied!")}
+                                  onClick={() => handleShare(file.fileUrl)}
                                   className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
                                 >
                                   <Share2 className="w-4 h-4 text-gray-600" />
                                 </button>
                                 {(role === "admin" || role === "manager") && (
                                   <button
-                                    onClick={() => deleteFile(file._id)}
+                                    onClick={() => handleFileDelete(file._id)}
                                     className="p-1.5 hover:bg-red-100 rounded-lg transition-colors"
                                   >
                                     <Trash2 className="w-4 h-4 text-red-500" />
