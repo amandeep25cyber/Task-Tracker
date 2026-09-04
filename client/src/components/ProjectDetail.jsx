@@ -1,11 +1,32 @@
 import { Card } from "./ui/Card";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Upload, MessageSquare, FileText, CheckSquare, Settings, Send, Download, Share2, Plus, X } from "lucide-react";
+import { ArrowLeft, Upload, MessageSquare, FileText, CheckSquare, Settings, Send, Download, Share2, Plus, X, Image, File, Trash2, Search, Grid3x3, List, MoreVertical } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { KanbanBoard } from "./ui/KanbanBoard";
 import { toast } from "react-toastify";
 import { createNewTask, getSingleProject, taskStatusUpdate } from "../services/organisation.services";
 import { createNewTaskByManager, getProjectDataById, updateTaskStatus, uploadFile } from "../services/manager.services";
+
+const typeIcon = {
+  design: Image,
+  document: FileText,
+  spreadsheet: File,
+  image: Image,
+};
+
+const typeColor = {
+  design: "bg-violet-100 text-violet-600",
+  document: "bg-blue-100 text-blue-600",
+  spreadsheet: "bg-emerald-100 text-emerald-600",
+  image: "bg-amber-100 text-amber-600",
+};
+
+const typeLabels = {
+  design: "Design",
+  document: "Document",
+  spreadsheet: "Spreadsheet",
+  image: "Image",
+};
 
 const tabs = [
   { id: "overview", label: "Overview", icon: CheckSquare },
@@ -63,6 +84,11 @@ const DEFAULT_TASK = {
 
 const ProjectDetail = ({ role }) => {
   const { id } = useParams();
+  const [files, setFiles] = useState(projectFiles);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("All Files");
+  const [showActions, setShowActions] = useState(null);
+  const [viewMode, setViewMode] = useState("grid");
   const [activeTab, setActiveTab] = useState("overview");
   const [projectData,setProjectData] = useState(DEFAULT_PROJECT);
   const [showNewTask,setShowNewTask] = useState(false);
@@ -78,6 +104,16 @@ const ProjectDetail = ({ role }) => {
   useEffect(()=>{
     getProjectData();
   },[])
+
+  const filtered = files.filter((f) => {
+    const matchSearch = f.name.toLowerCase().includes(search.toLowerCase()) || f.author.toLowerCase().includes(search.toLowerCase());
+    const matchType = typeFilter === "All Files" ||
+      (typeFilter === "Documents" && f.type === "document") ||
+      (typeFilter === "Images" && (f.type === "image" || f.type === "design")) ||
+      (typeFilter === "Spreadsheets" && f.type === "spreadsheet") ||
+      (typeFilter === "Design Files" && f.type === "design");
+    return matchSearch && matchType;
+  });
 
   const getProjectData = async () =>{
     try {
@@ -427,26 +463,166 @@ const ProjectDetail = ({ role }) => {
                   </button>
                 )}
               </div>
-              <div className="space-y-2">
-                {projectFiles.map((file) => (
-                  <div key={file.id} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${file.type === "design" ? "bg-violet-100" : "bg-blue-100"}`}>
-                      <FileText className={`w-5 h-5 ${file.type === "design" ? "text-violet-600" : "text-blue-600"}`} />
+              <div>
+                <div className="py-4 border-b border-gray-100">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative flex-1 min-w-48">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search files..."
+                        className="w-full pl-9 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                      {search && (
+                        <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 text-sm truncate">{file.name}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{file.author} · {file.modified} · {file.size}</p>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors" title="Download">
-                        <Download className="w-4 h-4 text-gray-600" />
+                    <select
+                      value={typeFilter}
+                      onChange={(e) => setTypeFilter(e.target.value)}
+                      className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    >
+                      <option>All Files</option>
+                      <option>Documents</option>
+                      <option>Design Files</option>
+                      <option>Images</option>
+                      <option>Spreadsheets</option>
+                    </select>
+                    <div className="flex bg-gray-100 rounded-xl p-1 gap-0.5">
+                      <button
+                        onClick={() => setViewMode("grid")}
+                        className={`p-2 rounded-lg transition-colors ${viewMode === "grid" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+                      >
+                        <Grid3x3 className="w-4 h-4" />
                       </button>
-                      <button className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors" title="Share">
-                        <Share2 className="w-4 h-4 text-gray-600" />
+                      <button
+                        onClick={() => setViewMode("list")}
+                        className={`p-2 rounded-lg transition-colors ${viewMode === "list" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+                      >
+                        <List className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
-                ))}
+                  {filtered.length !== files.length && (
+                    <p className="text-xs text-gray-400 mt-2">Showing {filtered.length} of {files.length} files</p>
+                  )}
+                </div>
+
+                <div className="py-5">
+                  {filtered.length === 0 ? (
+                    <div className="text-center py-12">
+                      <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500 font-medium">No files found</p>
+                      <p className="text-sm text-gray-400 mt-1">Try a different search or filter</p>
+                    </div>
+                  ) : viewMode === "grid" ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {filtered.map((file) => {
+                          const Icon = typeIcon[file.type];
+                          return (
+                            <div
+                              key={file.id}
+                              className="p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 group"
+                            >
+                              <div className="flex items-start justify-between mb-3">
+                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${typeColor[file.type]}`}>
+                                  <Icon className="w-6 h-6" />
+                                </div>
+                                <div className="relative">
+                                  <button
+                                    onClick={() => setShowActions(showActions === file.id ? null : file.id)}
+                                    className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                  >
+                                    <MoreVertical className="w-4 h-4 text-gray-600" />
+                                  </button>
+                                  {showActions === file.id && (
+                                    <div className="absolute right-0 mt-1 w-40 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-10">
+                                      <button
+                                        onClick={() => { setShowActions(null); showToast("Download started"); }}
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                      >
+                                        <Download className="w-4 h-4" /> Download
+                                      </button>
+                                      <button
+                                        onClick={() => { setShowActions(null); showToast("Link copied!"); }}
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                      >
+                                        <Share2 className="w-4 h-4" /> Share
+                                      </button>
+                                      {(role === "admin" || role === "manager") && (
+                                        <>
+                                          <div className="my-1 border-t border-gray-100" />
+                                          <button
+                                            onClick={() => deleteFile(file.id)}
+                                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                          >
+                                            <Trash2 className="w-4 h-4" /> Delete
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">{file.name}</h4>
+                              <p className="text-xs text-gray-500 mb-2">{file.size}</p>
+                              <div className="flex items-center gap-2 text-xs text-gray-400">
+                                <div className="w-4 h-4 bg-linear-to-br from-blue-500 to-violet-500 rounded-full flex items-center justify-center">
+                                  <span className="text-white text-[7px] font-bold">{file.author.substring(0, 2).toUpperCase()}</span>
+                                </div>
+                                  {file.modified}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {filtered.map((file) => {
+                          const Icon = typeIcon[file.type];
+                          return (
+                            <div key={file.id} className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors group">
+                              <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${typeColor[file.type]}`}>
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 text-sm truncate">{file.name}</p>
+                                <p className="text-xs text-gray-500">{file.author} · {file.modified}</p>
+                              </div>
+                              <span className="text-xs text-gray-400 hidden sm:block">{typeLabels[file.type]}</span>
+                              <span className="text-sm text-gray-500 w-16 text-right">{file.size}</span>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => showToast("Download started")}
+                                  className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+                                >
+                                  <Download className="w-4 h-4 text-gray-600" />
+                                </button>
+                                <button
+                                  onClick={() => showToast("Link copied!")}
+                                  className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+                                >
+                                  <Share2 className="w-4 h-4 text-gray-600" />
+                                </button>
+                                {(role === "admin" || role === "manager") && (
+                                  <button
+                                    onClick={() => deleteFile(file.id)}
+                                    className="p-1.5 hover:bg-red-100 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                </div>
               </div>
             </div>
           )}
