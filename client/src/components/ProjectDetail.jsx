@@ -149,6 +149,16 @@ const ProjectDetail = ({ role }) => {
     }
   }
 
+  const getFileDownloadUrl = (url,fileName) =>{
+    if(!url) return "";
+    const replacedValue = "/upload/";
+    const safeFileName = fileName 
+        ? fileName.split('.')[0].replace(/[^a-zA-Z0-9_-]/g, "") 
+        : "";
+
+    return url.replace(replacedValue,`${replacedValue}fl_attachment${safeFileName? `:${safeFileName}/` :"/"}`);
+  }
+
   const getProjectFilesData = async ()=>{
     try {
 
@@ -556,12 +566,13 @@ const ProjectDetail = ({ role }) => {
                                   </button>
                                   {showActions === file._id && (
                                     <div className="absolute right-0 mt-1 w-40 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 z-10">
-                                      <button
-                                        onClick={() => { setShowActions(null); showToast("Download started"); }}
+                                      <a
+                                        href={`${getFileDownloadUrl(file.fileUrl,file.fileName)}`}
+                                        onClick={() => { setShowActions(null); }}
                                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                       >
                                         <Download className="w-4 h-4" /> Download
-                                      </button>
+                                      </a>
                                       <button
                                         onClick={() => { setShowActions(null); showToast("Link copied!"); }}
                                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
@@ -586,7 +597,9 @@ const ProjectDetail = ({ role }) => {
                               <h4 className="font-medium text-gray-900 text-sm mb-1 truncate">{file.fileName}</h4>
                               <p className="text-xs text-gray-500 mb-2">{ formatBytes(file.size) }</p>
                               <div className="flex items-center gap-2 text-xs text-gray-400">
-                                <div className="w-4 h-4 bg-linear-to-br from-blue-500 to-violet-500 rounded-full flex items-center justify-center">
+                                <div 
+                                title={`Uploaded By: ${file.uploadedBy?.name}`}
+                                className="w-4 h-4 bg-linear-to-br from-blue-500 to-violet-500 rounded-full flex items-center justify-center">
                                   <span className="text-white text-[7px] font-bold">{file.uploadedBy?.name?.substring(0, 2).toUpperCase()}</span>
                                 </div>
                                   { getRelativeTime(file.createdAt) }
@@ -611,12 +624,12 @@ const ProjectDetail = ({ role }) => {
                               <span className="text-xs text-gray-400 hidden sm:block">{typeLabels[file.fileType]}</span>
                               <span className="text-sm text-gray-500 w-16 text-right">{ formatBytes(file.size) }</span>
                               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                  onClick={() => showToast("Download started")}
+                                <a
+                                  href={`${getFileDownloadUrl(file.fileUrl, file.fileName)}`}
                                   className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
                                 >
                                   <Download className="w-4 h-4 text-gray-600" />
-                                </button>
+                                </a>
                                 <button
                                   onClick={() => showToast("Link copied!")}
                                   className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
